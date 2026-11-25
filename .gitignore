@@ -1,0 +1,7 @@
+*.p12
+*.jks
+keys/*.txt
+build/
+__pycache__/
+*.pyc
+.DS_Store

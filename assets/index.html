@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Щиток 2</title>
+<script src="release-ops.js"></script>
+<script src="devices.js"></script>
+<style>
+:root{--bg:#101216;--card:#1a1d24;--card2:#222630;--line:#2c313c;--tx:#eef1f6;--mut:#8b93a3;--acc:#ffb020;--acc2:#ffd27a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:16px/1.3 system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;overscroll-behavior:none}
+#app{display:flex;flex-direction:column;height:100%}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
+.tabs{flex:1;display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tabs button{flex:1 1 auto;min-width:0;background:none;border:0;color:var(--mut);font-size:12px;font-weight:700;padding:5px 6px 3px;white-space:nowrap;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.tabs small{font-size:10px;font-weight:700;min-height:12px;opacity:.85}
+.tabs button.on{background:var(--acc);color:#1a1200}
+#photoBox{position:relative;flex:none}
+#photoBox .zoom{position:absolute;top:8px;right:8px;z-index:3;background:rgba(26,29,36,.82);backdrop-filter:blur(4px)}
+.zoom{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.zoom button{background:none;border:0;color:var(--mut);font-size:14px;font-weight:600;padding:7px 9px}
+.zoom button.on{background:var(--acc);color:#1a1200}
+#photoWrap{position:relative;overflow:auto;max-height:42vh;background:#000;border-top:1px solid var(--line);border-bottom:1px solid var(--line);scrollbar-width:none;flex:none}
+#photoWrap::-webkit-scrollbar{display:none}
+#stage{position:relative;width:100%}
+#stage img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+#stage svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.hit{fill:rgba(52,199,89,.16);stroke:rgba(52,199,89,.95);stroke-width:6;cursor:pointer}
+.hit.unused{fill:rgba(150,156,170,.2);stroke:rgba(165,170,184,.75);stroke-dasharray:14 10}
+.hit.sel{stroke:var(--acc);stroke-width:12;stroke-dasharray:none;fill:rgba(255,176,32,.3)}
+.bd circle{fill:rgba(16,18,22,.78);stroke:rgba(255,255,255,.7);stroke-width:4}
+.bd text{fill:#fff;font:700 74px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+.bd.used circle{fill:#1f9d4c;stroke:#d8ffe5}
+.bd.unused circle{fill:rgba(88,94,108,.9);stroke:rgba(210,214,224,.7)}
+.bd.unused text{fill:#d5d9e2}
+.bd.sel circle{fill:var(--acc);stroke:#fff}
+.bd.sel text{fill:#1a1200}
+.bd.used text{fill:#fff}
+.bd.sel text{fill:#1a1200}
+.bd{pointer-events:none}
+#dim{fill:rgba(0,0,0,.58);fill-rule:evenodd;pointer-events:none;opacity:0;transition:opacity .2s}
+#dim.on{opacity:1}
+#listWrap{flex:1;min-height:0;overflow-y:auto;padding:10px 12px calc(14px + env(safe-area-inset-bottom))}
+.foot{display:none;text-align:center;color:var(--mut);font-size:13px;margin:14px 0 4px}.fbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}.fbtns button{margin:0!important}
+.foot button{display:block;margin:8px auto 0;background:var(--card);border:1px solid var(--line);color:var(--tx);font-size:14px;font-weight:600;padding:10px 16px;border-radius:12px}
+.hint{color:var(--mut);font-size:13px;margin:0 2px 8px}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 8px 10px 10px;margin-bottom:8px;transition:background .15s,border-color .15s}
+.row.used{border-left:5px solid #34c759}
+.row.used .num{background:#1f9d4c;color:#fff}
+.row.unused{padding:4px 6px 4px 8px;margin-bottom:4px;border-radius:10px;background:transparent;border-style:dashed;gap:10px}
+.row.unused .num{width:24px;height:24px;font-size:12px;background:#3a3f4b;color:#aab0be}
+.row.unused .name{font-size:13px;font-weight:500;color:var(--mut)}
+.row.unused .sub{display:none}
+.row.unused .edit{padding:3px 10px;font-size:15px}
+.row.sel{background:#2b2417;border-color:var(--acc);border-style:solid;opacity:1}
+.num{flex:none;width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--acc2)}
+.row.sel .num{background:var(--acc)!important;color:#1a1200!important}
+.main{flex:1;min-width:0}
+.name{font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.name.empty{color:var(--mut);font-weight:500}
+.sub{font-size:12px;color:var(--mut);margin-top:2px}
+.edit{flex:none;background:none;border:0;color:var(--mut);padding:10px;border-radius:10px;font-size:18px}
+.edit:active{background:var(--card2)}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:10}
+#modal.on{display:flex}
+.sheet{width:100%;max-width:520px;background:var(--card);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));border:1px solid var(--line)}
+.sheet h2{margin:0 0 10px;font-size:17px}
+.sheet input{width:100%;font-size:17px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--tx);outline:none}
+.sheet input:focus{border-color:var(--acc)}
+.btns{display:flex;gap:8px;margin-top:12px}
+.btns button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;font-weight:600}
+.btns .ok{background:var(--acc);color:#1a1200;border-color:var(--acc)}
+.reset{display:block;margin:10px auto 0;background:none;border:0;color:var(--mut);font-size:13px;padding:6px}
+#devWrap{display:none;flex:1;min-height:0;overflow-y:auto;padding:10px 12px calc(14px + env(safe-area-inset-bottom))}
+#convWrap{display:none;flex:1;min-height:0;overflow-y:auto;padding:10px 12px calc(14px + env(safe-area-inset-bottom))}
+#app.dev #photoBox,#app.dev #listWrap,#app.conv #photoBox,#app.conv #listWrap,#app.sep #photoBox,#app.sep #listWrap{display:none}
+#app.conv #convWrap{display:block}
+#sepWrap{display:none;flex:1;min-height:0;overflow-y:auto;padding:10px 12px calc(18px + env(safe-area-inset-bottom))}
+#app.sep #sepWrap{display:block}
+.sp-h{font-size:15px;font-weight:700;margin:18px 2px 8px;color:var(--acc2)}
+.sp-t{font-size:19px;font-weight:700;margin:2px 2px 2px}
+.sp-img{position:relative;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line)}
+.sp-img img{display:block;width:100%;height:auto}
+.sp-img svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.shs{fill:rgba(52,199,89,.08);stroke:rgba(52,199,89,.9);stroke-width:5;cursor:pointer}
+.shs.sel{fill:rgba(255,176,32,.28);stroke:var(--acc);stroke-width:9}
+.tbw{border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-top:10px}
+.tb{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--card);table-layout:fixed}
+.tb th{background:#1f3a5f;color:#fff;text-align:left;padding:8px 6px;font-size:12px;font-weight:700}
+.tb td{padding:8px 5px;border-top:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.tb td.ok{background:rgba(52,199,89,.14)}
+.tb td.g{color:#6be08c;font-weight:600}
+.tb tr.sr{cursor:pointer}
+.tb tr.sr.sel td{background:#2b2417}
+.tb tr.sr.sel td.ok{background:#3a3318}
+.tb .n2{width:22px;height:22px;border-radius:50%;background:#d92d20;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.note{border-radius:12px;padding:10px 12px;margin-top:8px;font-size:14px}
+.note.warn{background:#2b2417;border:1px solid #6b5217}
+.note.bad{background:#2d1717;border:1px solid #7a2a2a;color:#ffd9d6}
+.ph{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.ph b{display:block;font-size:16px;margin-bottom:2px}
+.ph .r{font-size:14px;margin-top:8px}
+.ph .r small{display:block;color:var(--mut);font-size:12px}
+.ph .g{color:#6be08c;font-weight:600}
+.cm{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.cm b{color:var(--acc2)}
+.sl{margin:6px 0 0;padding-left:20px;font-size:14px}.sl li{margin-bottom:5px}
+.dial{display:inline-block;margin:8px 8px 0 0;background:var(--acc);color:#1a1200;font-weight:700;border:0;border-radius:999px;padding:9px 14px;font-size:14px}
+.dial.ln{background:var(--card2);color:var(--tx);border:1px solid var(--line)}
+.pw{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.pw .nd{display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:14px;font-weight:600}
+.pw .nd.top{background:var(--acc);color:#1a1200;border-color:var(--acc);font-size:15px;font-weight:700;width:100%;text-align:left}
+.pw .ar{text-align:center;color:var(--acc2);line-height:1;margin:5px 0}
+.pw .br{margin:6px 0 0 16px;border-left:2px solid var(--acc2);padding-left:12px}
+.pw .br .nd{margin-top:7px}
+.pw .sb{font-size:12px;color:var(--mut);font-weight:500;display:block;margin-top:1px}
+.srcn{color:var(--mut);font-size:12px;margin:14px 2px 0}
+.cv{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.cv:active{background:var(--card2)}
+.cv .ct{font-size:17px;font-weight:700}
+.cv .cr{font-size:13px;color:var(--mut);margin-top:2px}
+.cv .cs{margin:10px 0 0;display:flex;flex-direction:column;gap:0}
+.cv .st{display:flex;align-items:center;gap:8px;font-size:14px;padding:4px 0}
+.cv .st i{flex:none;font-style:normal;color:var(--acc2);width:18px;text-align:center}
+.cv .st.ar{color:var(--mut);font-size:12px;padding:0 0 0 0}
+.cv .go{display:inline-block;margin-top:10px;background:var(--acc);color:#1a1200;font-weight:700;font-size:13px;border-radius:999px;padding:5px 12px}
+#app.dev #devWrap{display:block}
+#app.dev .zoom{display:none}
+.dn{display:flex;align-items:center;gap:8px;border-radius:12px;padding:9px 8px;margin-bottom:4px;background:var(--card);border:1px solid var(--line)}
+.dn:active{background:var(--card2)}
+.dn .lb{flex:none;min-width:22px;color:var(--acc2);font-weight:700}
+.dn .dt{flex:1;min-width:0;overflow-wrap:anywhere}
+.dn.l1{background:var(--card2);font-size:17px;font-weight:700;margin-top:8px}
+.dn.l2{margin-left:18px;font-size:16px;font-weight:600}
+.dn.l4{margin-left:62px;font-size:14px;font-weight:500;padding:7px 8px;background:transparent;border-color:transparent;border-left:2px solid var(--line);border-radius:0 10px 10px 0}
+.dn.l3{margin-left:40px;font-size:14px;font-weight:500;padding:7px 8px;background:transparent;border-color:transparent;border-left:2px solid var(--line);border-radius:0 10px 10px 0}
+.dn .chip{flex:none;font-size:12px;font-weight:700;color:#1a1200;background:var(--acc);border-radius:999px;padding:3px 9px}
+.dn .chev{flex:none;background:none;border:0;color:var(--mut);font-size:16px;padding:4px 8px;margin:-4px 0}
+.dk.off{display:none}
+.wi{flex:none;display:inline-flex;align-items:center}
+.wi svg{display:block}
+.wn path.t{fill:#ffcc00;stroke:#1a1200;stroke-width:9;stroke-linejoin:round}
+.wn .e{fill:#1a1200}
+.wn{pointer-events:none}
+@media (orientation:landscape) and (min-width:700px){
+  #devWrap{width:100%;height:calc(100% - 52px)}
+  #app{flex-direction:row;flex-wrap:wrap}
+  header{width:100%}
+  #convWrap,#sepWrap{width:100%;height:calc(100% - 52px)}
+  #photoBox{width:58%;height:calc(100% - 52px)}
+  #photoWrap{width:100%;height:100%;max-height:none;border:0;border-top:1px solid var(--line);display:flex;align-items:center}
+  #stage{flex:none}
+  #listWrap{width:42%;height:calc(100% - 52px)}
+}
+/* Щиток 2: управление категориями, устройствами и экспортом */
+[hidden]{display:none!important}
+.dev-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.dev-tools button,.dact,.dcat button{min-height:44px;cursor:pointer}
+.dev-tools button{flex:1 1 150px;background:var(--card);border:1px solid var(--line);color:var(--tx);font-size:14px;font-weight:600;padding:10px 12px;border-radius:12px}
+.dev-tools button:first-child{background:var(--acc);border-color:var(--acc);color:#1a1200}
+.dev-tools button:hover{filter:brightness(1.08)}
+.dcat{display:flex;align-items:center;gap:6px;margin:16px 0 6px;padding:6px 0;border-bottom:1px solid var(--line)}
+.dcat:first-child{margin-top:4px}
+.dcat-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:none;border:0;color:var(--tx);text-align:left;padding:6px 0;cursor:pointer}
+.dcat-main b{font-size:17px;overflow-wrap:anywhere}
+.dcat-main small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+.dactions{display:flex;gap:2px;flex:none}
+.dact{background:none;border:0;color:var(--mut);border-radius:9px;min-width:40px;padding:8px;font-size:17px}
+.dact:hover,.dact:focus-visible{background:var(--card2);color:var(--tx)}
+.dact.del{color:#ff8f86}
+.dn .dtext{flex:1;min-width:0;overflow-wrap:anywhere}
+.dn .ddesc{display:block;color:var(--mut);font-size:12px;font-weight:400;margin-top:3px;white-space:pre-wrap}
+.dn .chip{flex:none;font-size:12px;font-weight:700;color:#1a1200;background:var(--acc);border-radius:999px;padding:4px 9px}
+.dk.off{display:none}
+.empty{padding:18px 10px;color:var(--mut);text-align:center;border:1px dashed var(--line);border-radius:12px}
+.sheet{max-height:90vh;overflow-y:auto}
+.sheet textarea,.sheet select{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--tx);outline:none}
+.sheet textarea{min-height:76px;resize:vertical}
+.sheet textarea:focus,.sheet select:focus{border-color:var(--acc)}
+.formfield{display:block;margin:10px 0}
+.formfield>span{display:block;color:var(--mut);font-size:12px;margin:0 0 5px}
+.form-error{display:none;color:#ff9c94;font-size:13px;margin:8px 0 0}
+.form-error.on{display:block}
+.modal2{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:11}
+.modal2.on{display:flex}
+.confirm-text{color:var(--mut);font-size:14px;line-height:1.45;margin:0 0 8px;white-space:pre-wrap}
+.btns .danger{background:#8f2d26;border-color:#a43830;color:#fff}
+#notice{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:calc(100% - 32px);background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:12;text-align:center}
+#notice.on{opacity:1}
+@media (prefers-reduced-motion:reduce){#notice,#dim,.row{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="tabs" id="tabs"><button data-p="left" data-t="Левый" class="on"></button><button data-p="right" data-t="Правый"></button><button data-p="dev" data-t="Устройства"></button><button data-p="conv" data-t="Конвекторы"></button><button data-p="sep" data-t="Септик"></button></div>
+  </header>
+  <div id="photoBox"><div class="zoom" id="zoom"><button data-z="1" class="on">1×</button><button data-z="2">2×</button><button data-z="3">3×</button></div>
+  <div id="photoWrap"><div id="stage">
+    <img id="photo" src="photo.jpg" alt="Щиток">
+    <svg id="ov" viewBox="0 0 2576 1840" preserveAspectRatio="none"></svg>
+  </div></div></div>
+  <div id="listWrap">
+    <p class="hint">Нажмите на устройство на фото или на строку в списке. Карандаш — изменить название. Повторное нажатие на вкладку щитка переключает фото и схему.</p>
+    <div id="list"></div>
+    <div class="foot" id="foot"><span id="ver"></span><div class="fbtns"><button id="upd">Проверить обновления</button><button id="shr">Поделиться АПК</button></div></div>
+  </div>
+  <div id="devWrap">
+    <p class="hint">Нажмите на устройство — откроется щиток и подсветится автомат. Карандаш — изменить, × — удалить.</p>
+    <div class="dev-tools"><button id="addCat">+ Новая категория</button><button id="exportChanges">Выгрузить изменения</button></div>
+    <div id="devList"></div>
+  </div>
+  <div id="sepWrap"></div>
+  <div id="convWrap"><p class="hint">Нажмите на конвектор — откроется щиток и подсветится автомат, к которому он подключён.</p><div id="convList"></div></div>
+</div>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="sheet">
+  <h2 id="mTitle"></h2>
+  <label class="formfield"><span>Название устройства или подключения</span><input id="mInput" type="text" maxlength="120" placeholder="Например: стиральная машина" autocomplete="off"></label>
+  <label class="formfield"><span>Описание (необязательно)</span><textarea id="mDesc" maxlength="1000" placeholder="Модель, место, особенности подключения"></textarea></label>
+  <label class="formfield"><span>Категория</span><select id="mCategory"></select></label>
+  <label class="formfield" id="newCatWrap" hidden><span>Название новой категории</span><input id="mNewCategory" type="text" maxlength="80" placeholder="Например: кухня" autocomplete="off"></label>
+  <p class="form-error" id="mError" role="alert"></p>
+  <div class="btns"><button id="mCancel">Отмена</button><button class="ok" id="mSave">Сохранить</button></div>
+  <button class="reset" id="mReset">Сбросить подпись к исходной</button>
+</div></div>
+<div id="catModal" class="modal2" role="dialog" aria-modal="true" aria-labelledby="catTitle"><div class="sheet">
+  <h2 id="catTitle">Новая категория</h2>
+  <label class="formfield"><span>Название категории</span><input id="catInput" type="text" maxlength="80" placeholder="Например: гараж" autocomplete="off"></label>
+  <p class="form-error" id="catError" role="alert"></p>
+  <div class="btns"><button id="catCancel">Отмена</button><button class="ok" id="catSave">Сохранить</button></div>
+</div></div>
+<div id="confirmModal" class="modal2" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="sheet">
+  <h2 id="confirmTitle">Подтвердите удаление</h2>
+  <p class="confirm-text" id="confirmText"></p>
+  <div class="btns"><button id="confirmCancel">Отмена</button><button class="danger" id="confirmYes">Удалить</button></div>
+</div></div>
+<div id="notice" role="status"></div>
+<script>
+(function(){
+var TOP=[215,407,594,779,968,1158,1349,1543,1736,1932,2129,2329,2529];
+var BOT=[208,402,590,770,958,1148,1340,1528,1723,1917,2114,2312,2527];
+var Y0=462,Y1=928;
+var LP=[];
+for(var q=0;q<12;q++) LP.push([[TOP[q],Y0],[TOP[q+1],Y0],[BOT[q+1],Y1],[BOT[q],Y1]]);
+var RP=[[[95,320],[365,320],[365,593],[95,593]],[[395,320],[665,320],[665,593],[395,593]],[[700,320],[972,320],[972,593],[700,593]],[[1063,55],[1258,55],[1258,209],[1258,700],[1258,841],[1084,841],[1047,700],[1047,209]],[[1263,55],[1653,55],[1679,209],[1679,700],[1653,841],[1272,841],[1263,700],[1263,209]],[[1658,55],[2053,55],[2105,209],[2105,700],[2037,841],[1653,841],[1684,700],[1684,209]],[[2058,55],[2453,55],[2542,209],[2542,700],[2426,841],[2042,841],[2114,700],[2114,209]],[[230,1095],[411,1095],[355,1286],[355,1827],[160,1827],[160,1286]],[[411,1095],[590,1095],[550,1286],[550,1827],[355,1827],[355,1286]],[[590,1095],[770,1095],[740,1286],[740,1827],[550,1827],[550,1286]],[[770,1095],[950,1095],[935,1286],[935,1827],[740,1827],[740,1286]],[[950,1095],[1137,1095],[1130,1286],[1130,1827],[935,1827],[935,1286]],[[1137,1095],[1318,1095],[1320,1286],[1320,1827],[1130,1827],[1130,1286]],[[1318,1095],[1499,1095],[1505,1286],[1505,1827],[1320,1827],[1320,1286]],[[1499,1095],[1681,1095],[1700,1286],[1700,1827],[1505,1827],[1505,1286]],[[1681,1095],[1863,1095],[1900,1286],[1900,1827],[1700,1827],[1700,1286]],[[1863,1095],[2416,1095],[2485,1286],[2485,1827],[1900,1827],[1900,1286]]];
+var RSUB=["Реле EKF MRVA-3 63A, фаза L1","Реле EKF MRVA-3 63A, фаза L2","Реле EKF MRVA-3 63A, фаза L3","Schneider K60a C40A","Schneider K60a C25A, 2 полюса","Schneider K60a C16A, 2 полюса","Schneider K60a C16A, 2 полюса",
+ "Easy9 C16A (нижний ряд)","Easy9 C16A (нижний ряд)","Easy9 C16A (нижний ряд)","Easy9 C10A (нижний ряд)","Easy9 C10A (нижний ряд)","Easy9 C10A (нижний ряд)","Easy9 C6A (нижний ряд)","Easy9 C6A (нижний ряд)","Easy9 C6A (нижний ряд)","Easy9 C16A, 3 полюса (нижний ряд)"];
+var LSUB=[];for(var q=0;q<12;q++)LSUB.push("Автомат DEKraft B16");
+var RDEF=["Вводное реле от столба, фаза L1 (дальше идёт на стабилизатор)","Вводное реле от столба, фаза L2 (дальше идёт на стабилизатор)","Вводное реле от столба, фаза L3 (дальше идёт на стабилизатор)"];
+while(RDEF.length<17)RDEF.push("");
+RDEF[7]="Ванная: розетки в ванной, бойлер, скважина, септик, свет в ванной, очистка воды, греющий кабель";
+RDEF[9]="Удлинитель у окна на лестнице: роутеры Keenetic Runner 4G и 1-й (основной) AX6000, камера";
+RDEF[14]="Свет 1-го и 2-го этажа + всё уличное освещение";
+RDEF[5]="ХОЛОДИЛЬНИК. Удлинитель холодильника, конвектор Баллу инверт 25 в коридоре (через умную розетку), Сбер Хаб";
+RDEF[16]="Электроплита";
+var LDEF=["Верхний свет в комнате маман (2й этаж)","Розетка в комнате с проектором (в неё подключён 2-й роутер Xiaomi AX6000)","Розетка в комнате маман (2й этаж)","Розетка в комнате с барабанами (2й этаж)","Удлинитель в гостиной у дивана (через умную розетку — конвектор Баллу инверт 25)","Удлинитель на кухню в гостиной: чайник, микроволновка, гриль, мультиварка (чёрный провод 3×2,5 мм²)","Верхний свет в комнате с барабанами (2й этаж)","","","","",""];
+// ---------- схемы (координаты в тех же единицах, что и у фото: 2576 по ширине) ----------
+var SNS="http://www.w3.org/2000/svg";
+function SE(g,n,a,txt){var e=document.createElementNS(SNS,n);for(var k in a)e.setAttribute(k,a[k]);if(txt!==undefined)e.textContent=txt;g.appendChild(e);return e;}
+function RC(g,x,y,w,h,f,s,rx,sw){return SE(g,"rect",{x:x,y:y,width:w,height:h,fill:f,stroke:s||"none","stroke-width":sw||3,rx:rx||0});}
+function TX(g,x,y,t,sz,f,anc,wt,fam){return SE(g,"text",{x:x,y:y,"font-size":sz,fill:f,"text-anchor":anc||"start","font-weight":wt||600,"font-family":fam||"system-ui,Roboto,sans-serif"},t);}
+function CI(g,x,y,r,f,s,sw){return SE(g,"circle",{cx:x,cy:y,r:r,fill:f,stroke:s||"none","stroke-width":sw||3});}
+function LN(g,x1,y1,x2,y2,s,w,cap){return SE(g,"line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:s,"stroke-width":w,"stroke-linecap":cap||"round"});}
+function SCREW(g,x,y,r){CI(g,x,y,r,"#d5d9df","#7f8793",4);CI(g,x,y,r*0.62,"#eef0f3","#aab0ba",2);LN(g,x-r*0.5,y,x+r*0.5,y,"#5b626d",5);LN(g,x,y-r*0.5,x,y+r*0.5,"#5b626d",5);}
+function SBG(g,h,title){RC(g,0,0,2576,h,"#12151b");TX(g,60,66,title,44,"#8b93a3","start",700);}
+var SH=1840;
+// единый вид любого автомата: клеммы сверху/снизу, корпус, окно рычага. n — число полюсов (модулей по 190)
+function BRK(g,x,Y,n,o){
+  var W=190*n;
+  for(var k=0;k<n;k++){
+    var mx=x+190*k;
+    RC(g,mx+6,Y,178,100,"#eef0f3","#aeb4bd",10,3);SCREW(g,mx+95,Y+47,34);
+  }
+  RC(g,x,Y+95,W-6,470,"#f4f5f7","#aeb4bd",14,3);
+  TX(g,x+14,Y+147,o.brand,30,"#1f232a","start",800);
+  LN(g,x+14,Y+157,x+14+o.ul,Y+157,"#1f232a",4);
+  TX(g,x+14,Y+217,o.rate,54,"#111418","start",800);
+  RC(g,x+122,Y+179,48,26,"#fff","#1f232a",3,2);TX(g,x+146,Y+198,o.cls,17,"#1f232a","middle",700);
+  TX(g,x+14,Y+259,o.l3,22,"#2a2f38","start",600);
+  TX(g,x+14,Y+301,o.l4,22,"#2a2f38","start",700);
+  for(var j=0;j<n;j++){
+    var lx=x+190*j;
+    RC(g,lx+30,Y+335,124,170,"#d4dae1","#aeb4bd",12,3);
+    RC(g,lx+44,Y+351,96,110,"#0f7f6f","#0a5a4e",14,3);
+    TX(g,lx+92,Y+417,"I",54,"#d9fff6","middle",800);
+  }
+  if(n>1)RC(g,x+44,Y+351,190*(n-1)+96,30,"#0a5a4e","none",8);
+  for(var m=0;m<n;m++){
+    var bx=x+190*m;
+    RC(g,bx+6,Y+565,178,100,"#eef0f3","#aeb4bd",10,3);SCREW(g,bx+95,Y+613,34);
+    if(o.stub)LN(g,bx+95,Y+665,bx+95,Y+665+o.stub,"#d8d3c3",15);
+  }
+}
+
+var YL=395;               // верх клемм автоматов на левом щитке
+var Y1=170,Y2=965;        // верхний и нижний ряды на правом щитке
+var LEFT_POLYS=[],LEFT_BADGES=[];
+for(var q=0;q<12;q++){var lx0=170+190*q;LEFT_POLYS.push([[lx0,YL],[lx0+184,YL],[lx0+184,YL+665],[lx0,YL+665]]);LEFT_BADGES.push([lx0+92,YL+395]);}
+function drawLeft(g){
+  SBG(g,SH,"ЛЕВЫЙ ЩИТОК — 12 × DEKraft B16 (1P)");
+  var d=YL-245;
+  // DIN-рейка
+  RC(g,20,590+d,2536,80,"#8e97a2","#6a727d",6);
+  for(var s=0;s<26;s++)RC(g,60+s*98,618+d,56,22,"#3b414a","none",11);
+  // ввод фазы: кабель, наконечник, две клеммы, медная перемычка
+  LN(g,0,150+d,100,150+d,"#1c1e22",58);
+  RC(g,92,122+d,46,56,"#2563eb","none",8);
+  RC(g,150,88+d,150,126,"#f1f3f6","#aeb4bd",12,4);SCREW(g,225,135+d,30);
+  RC(g,320,88+d,150,126,"#f1f3f6","#aeb4bd",12,4);SCREW(g,395,135+d,30);
+  RC(g,300,198+d,360,14,"#c77a48","none",3);
+  // гребёнка
+  RC(g,630,190+d,1830,44,"#e9ecf0","#aeb4bd",6,3);
+  for(var t=0;t<12;t++)RC(g,170+190*t+10,234+d,164,10,"#cfd4db","none",2);
+  TX(g,1545,222+d,"Гребёнка (общая шина)",26,"#4b5260","middle",600);
+  for(var i=0;i<12;i++)BRK(g,170+190*i,YL,1,{brand:"DEKraft",ul:106,rate:"B16",cls:"4500",l3:"230/400В~",l4:"ВА-101",stub:125});
+  // нулевая шина
+  RC(g,40,1290,2496,150,"#f1f3f6","#aeb4bd",16,4);
+  RC(g,150,1345,2280,44,"#c9a24b","#8f6f23",4,3);
+  for(var b=0;b<24;b++)SCREW(g,200+b*96,1367,32);
+  TX(g,1288,1505,"Нулевая шина N",42,"#aab0be","middle",700);
+}
+
+var RIGHT_POLYS=[],RIGHT_BADGES=[];
+(function(){
+  var dx=[85,400,715];
+  for(var a=0;a<3;a++){RIGHT_POLYS.push([[dx[a],300],[dx[a]+290,300],[dx[a]+290,545],[dx[a],545]]);RIGHT_BADGES.push(null);}
+  var gx=[1120,1310,1690,2070],gn=[1,2,2,2];
+  for(var k=0;k<4;k++){var w=190*gn[k]-6;RIGHT_POLYS.push([[gx[k],Y1],[gx[k]+w,Y1],[gx[k]+w,Y1+665],[gx[k],Y1+665]]);RIGHT_BADGES.push([gx[k]+w/2,Y1+395]);}
+  for(var m=0;m<9;m++){var ex=170+190*m;RIGHT_POLYS.push([[ex,Y2],[ex+184,Y2],[ex+184,Y2+665],[ex,Y2+665]]);RIGHT_BADGES.push([ex+92,Y2+395]);}
+  RIGHT_POLYS.push([[1880,Y2],[2444,Y2],[2444,Y2+665],[1880,Y2+665]]);RIGHT_BADGES.push([2162,Y2+395]);
+})();
+function drawRight(g){
+  SBG(g,SH,"ПРАВЫЙ ЩИТОК — вводное реле, Schneider K60a, Schneider Easy9");
+  // --- реле EKF MRVA-3 63A ---
+  RC(g,60,Y1,1010,665,"#e4e7ec","#aeb4bd",18,4);
+  RC(g,60,Y1+105,1010,445,"#f1f3f6","#cfd4db",0,2);
+  TX(g,565,148,"ВЫХОД ↑ к стабилизатору",34,"#9ec5ff","middle",700);
+  var tn=["N","L1","L2","L3"],tx=[190,440,690,940];
+  for(var i=0;i<4;i++){SCREW(g,tx[i],Y1+45,36);TX(g,tx[i],Y1+98,tn[i],28,"#2a2f38","middle",700);}
+  TX(g,565,Y1+58,"OUT",28,"#2a2f38","middle",700);
+  var dxs=[85,400,715],ln=["L1","L2","L3"];
+  for(var dd=0;dd<3;dd++){
+    RC(g,dxs[dd],300,290,245,"#0f1216","#2a2f38",10,3);
+    TX(g,dxs[dd]+276,345,"V",28,"#a02020","end",700);TX(g,dxs[dd]+276,470,"A",28,"#a02020","end",700);
+    TX(g,dxs[dd]+16,395,"888",100,"#4a1818","start",700,"monospace");
+    TX(g,dxs[dd]+16,520,"888",100,"#4a1818","start",700,"monospace");
+    TX(g,dxs[dd]+145,440,ln[dd],24,"#aab0be","middle",700);
+    CI(g,140+100*dd,585,14,"#2fbf5a","#1b7a38",3);TX(g,140+100*dd,628,ln[dd],22,"#2a2f38","middle",700);
+  }
+  RC(g,90,655,70,38,"#d8232a","none",6);TX(g,125,683,"EKF",26,"#fff","middle",800);
+  TX(g,190,686,"MRVA-3 63A",32,"#2a2f38","start",700);
+  var bt=[["⏻",640],["M",740],["▲",840],["▼",940]];
+  for(var j=0;j<4;j++){CI(g,bt[j][1],610,40,"#20242b","#0c0e12",3);TX(g,bt[j][1],624,bt[j][0],40,j===0?"#ff5a5a":"#e6e9ee","middle",700);}
+  RC(g,60,Y1+550,1010,115,"#e4e7ec","#aeb4bd",18,4);
+  for(var i2=0;i2<4;i2++){TX(g,tx[i2],Y1+588,tn[i2],28,"#2a2f38","middle",700);SCREW(g,tx[i2],Y1+628,32);}
+  TX(g,565,Y1+640,"IN",28,"#2a2f38","middle",700);
+  TX(g,565,872,"ВХОД ↑ от столба",34,"#9ec5ff","middle",700);
+  // --- Schneider K60a ---
+  var gx=[1120,1310,1690,2070],gn=[1,2,2,2],rt=["C40","C25","C16","C16"];
+  for(var k=0;k<4;k++)BRK(g,gx[k],Y1,gn[k],{brand:"Schneider",ul:136,rate:rt[k],cls:"4500",l3:"400В~",l4:"K60a",stub:0});
+  // --- гребёнка и Easy9 ---
+  RC(g,120,900,2370,44,"#e9ecf0","#aeb4bd",6,3);
+  TX(g,1305,932,"Гребёнка (общая шина)",26,"#4b5260","middle",600);
+  var er=["C16","C16","C16","C10","C10","C10","C6","C6","C6"],ec=["EZ9F34116","EZ9F34116","EZ9F34116","EZ9F34110","EZ9F34110","EZ9F34110","EZ9F34106","EZ9F34106","EZ9F34106"];
+  for(var e=0;e<9;e++)BRK(g,170+190*e,Y2,1,{brand:"Schneider",ul:136,rate:er[e],cls:"4500",l3:"Easy9 MCB",l4:ec[e],stub:105});
+  BRK(g,1880,Y2,3,{brand:"Schneider",ul:136,rate:"C16",cls:"4500",l3:"Easy9 MCB",l4:"EZ9F34316",stub:105});
+  // бумажные метки из фото
+  function tape(x,t,c){RC(g,x+26,Y2+8,132,134,"#e8dcb8","#bfae7e",4,3);TX(g,x+92,Y2+105,t,92,c,"middle",800,"cursive");}
+  tape(170,"B","#1f232a");tape(170+190*2,"X","#1f232a");tape(170+190*8,"8","#1d4ed8");
+}
+var PANELS={
+ left:{key:"shchitok.labels.v1",photo:"photo.jpg",vb:[2576,1840],polys:LP,sub:LSUB,defs:LDEF,scheme:{vb:[2576,1840],polys:LEFT_POLYS,badges:LEFT_BADGES,draw:drawLeft}},
+ right:{key:"shchitok.labels.right.v1",photo:"photo_right.jpg",vb:[2576,1840],polys:RP,sub:RSUB,defs:RDEF,warn:[5],scheme:{vb:[2576,1840],polys:RIGHT_POLYS,badges:RIGHT_BADGES,warnAt:{5:[1760,100]},draw:drawRight}}
+};
+var PKEY="shchitok.panel";
+var cur="left";
+try{var sp=localStorage.getItem(PKEY);if(sp&&PANELS[sp])cur=sp;}catch(e){}
+var P=PANELS[cur], edits={}, VIEW={left:"scheme",right:"scheme"};
+function V(){return VIEW[cur]==="scheme"?P.scheme:{vb:P.vb,polys:P.polys};}
+function loadEdits(){edits=store?store.labels(cur):{};}
+function save(){store.persist();}
+function label(i){
+  if(Object.prototype.hasOwnProperty.call(edits,i)) return edits[i];
+  return P.defs[i]||"";
+}
+var NS="http://www.w3.org/2000/svg";
+var ov=document.getElementById("ov"), list=document.getElementById("list"), photo=document.getElementById("photo");
+var wrap=document.getElementById("photoWrap"), stage=document.getElementById("stage");
+var sel=-1, zoom=1;
+function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function pstr(poly){var s=[];for(var j=0;j<poly.length;j++)s.push(poly[j][0]+","+poly[j][1]);return s.join(" ");}
+function center(poly){var x=0,y=0;for(var j=0;j<poly.length;j++){x+=poly[j][0];y+=poly[j][1];}return [x/poly.length,y/poly.length];}
+var WARN_SVG='<svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2.5 L23 21.5 H1 Z" fill="#ffcc00" stroke="#1a1200" stroke-width="1.4" stroke-linejoin="round"/><rect x="11" y="9" width="2" height="7" rx="1" fill="#1a1200"/><circle cx="12" cy="18.4" r="1.2" fill="#1a1200"/></svg>';
+var dim,hits,bds,rows,names;
+function build(){
+  P=PANELS[cur]; loadEdits(); sel=-1;
+  var v=V();
+  photo.setAttribute("src",P.photo);
+  if(VIEW[cur]==="scheme"){photo.style.display="none";stage.style.aspectRatio=v.vb[0]+" / "+v.vb[1];}
+  else{photo.style.display="";stage.style.aspectRatio="";}
+  ov.setAttribute("viewBox","0 0 "+v.vb[0]+" "+v.vb[1]);
+  while(ov.firstChild)ov.removeChild(ov.firstChild);
+  if(VIEW[cur]==="scheme"){var sg=el("g",{"class":"sch"});ov.appendChild(sg);P.scheme.draw(sg);}
+  list.innerHTML="";
+  dim=el("path",{id:"dim"}); ov.appendChild(dim);
+  hits=[];bds=[];rows=[];names=[];
+  var n=v.polys.length;
+  for(var i=0;i<n;i++){
+    var h=el("polygon",{"class":"hit",points:pstr(v.polys[i])});
+    (function(i){h.addEventListener("click",function(){select(i,false);});})(i);
+    ov.appendChild(h); hits.push(h);
+  }
+  for(var i=0;i<n;i++){
+    var c=(v.badges&&v.badges[i])||center(v.polys[i]);
+    var g=el("g",{"class":"bd"});
+    g.appendChild(el("circle",{cx:c[0],cy:c[1],r:56}));
+    var t=el("text",{x:c[0],y:c[1]+3}); t.textContent=String(i+1); g.appendChild(t);
+    ov.appendChild(g); bds.push(g);
+    if(P.warn&&P.warn.indexOf(i)>=0){
+      var w=el("g",{"class":"wn"});var wc=(v.warnAt&&v.warnAt[i])?[v.warnAt[i][0],v.warnAt[i][1]+129]:c;
+      w.appendChild(el("path",{"class":"t",d:"M"+wc[0]+","+(wc[1]-186)+" L"+(wc[0]+66)+","+(wc[1]-72)+" L"+(wc[0]-66)+","+(wc[1]-72)+" Z"}));
+      w.appendChild(el("rect",{"class":"e",x:wc[0]-6,y:wc[1]-150,width:12,height:40,rx:6}));
+      w.appendChild(el("circle",{"class":"e",cx:wc[0],cy:wc[1]-94,r:8}));
+      ov.appendChild(w);
+    }
+  }
+  for(var i=0;i<n;i++){
+    var r=document.createElement("div"); r.className="row";
+    r.innerHTML='<div class="num"></div><div class="main"><div class="name"></div><div class="sub"></div></div><button class="edit" aria-label="Изменить">✎</button>';
+    r.querySelector(".num").textContent=String(i+1);
+    if(P.warn&&P.warn.indexOf(i)>=0){var wi=document.createElement("span");wi.className="wi";wi.innerHTML=WARN_SVG;r.insertBefore(wi,r.querySelector(".edit"));}
+    r.querySelector(".sub").textContent=P.sub[i]||"";
+    (function(i,r){
+      r.addEventListener("click",function(ev){ if(ev.target.closest(".edit")) return; select(i,true); });
+      r.querySelector(".edit").addEventListener("click",function(){openEdit(i);});
+    })(i,r);
+    list.appendChild(r); rows.push(r); names.push(r.querySelector(".name"));
+  }
+  wrap.scrollLeft=0;wrap.scrollTop=0;
+  render();
+}
+function render(){
+  var v=V();
+  for(var i=0;i<v.polys.length;i++){
+    var s=label(i), nm=names[i];
+    nm.textContent=s||"Не используется"; nm.className="name"+(s?"":" empty");
+    var cr="";
+    hits[i].setAttribute("class","hit"+(i===sel?" sel":"")+(s?"":" unused")+cr);
+    bds[i].setAttribute("class","bd"+(s?" used":" unused")+(i===sel?" sel":"")+cr);
+    rows[i].className="row"+(s?" used":" unused")+(i===sel?" sel":"")+cr;
+  }
+  if(sel>=0){
+    dim.setAttribute("d","M0,0H"+v.vb[0]+"V"+v.vb[1]+"H0Z M"+pstr(v.polys[sel]).replace(/ /g," L")+" Z");
+    dim.setAttribute("class","on");
+  } else dim.setAttribute("class","");
+}
+function select(i,fromList){
+  sel=(sel===i)?-1:i;
+  render();
+  if(sel>=0){
+    centerPhoto(sel);
+    if(!fromList) rows[sel].scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+}
+function centerPhoto(i,force){
+  if(zoom<=1&&!force) return;
+  var v=V(), k=stage.clientWidth/v.vb[0], c=center(v.polys[i]);
+  wrap.scrollTo({left:Math.max(0,c[0]*k-wrap.clientWidth/2),top:Math.max(0,c[1]*k-wrap.clientHeight/2),behavior:"smooth"});
+}
+var zb=document.querySelectorAll("#zoom button");
+for(var k=0;k<zb.length;k++){(function(b){b.addEventListener("click",function(){
+  var old=wrap.scrollLeft+wrap.clientWidth/2, oldW=stage.clientWidth, oldY=(wrap.scrollTop+wrap.clientHeight/2)/stage.clientHeight;
+  zoom=+b.getAttribute("data-z");
+  for(var j=0;j<zb.length;j++)zb[j].className=(zb[j]===b)?"on":"";
+  stage.style.width=(zoom*100)+"%";
+  var ratio=old/oldW;
+  wrap.scrollLeft=Math.max(0,ratio*stage.clientWidth-wrap.clientWidth/2);
+  wrap.scrollTop=Math.max(0,oldY*stage.clientHeight-wrap.clientHeight/2);
+  if(sel>=0) centerPhoto(sel);
+});})(zb[k]);}
+var tb=document.querySelectorAll("#tabs button"), app=document.getElementById("app"), mode="panel";
+function markTabs(){var a=(mode==="panel")?cur:mode;for(var j=0;j<tb.length;j++){var bp=tb[j].getAttribute("data-p"),on=(bp===a);tb[j].className=on?"on":"";
+  var sm=(on&&(bp==="left"||bp==="right"))?(VIEW[bp]==="scheme"?"схема ⇄":"фото ⇄"):"";
+  tb[j].innerHTML="<span></span><small></small>";tb[j].firstChild.textContent=tb[j].getAttribute("data-t");tb[j].lastChild.textContent=sm;}
+  app.className=(mode==="panel")?"":mode;}
+function setPanel(p,reset){var ch=(p!==cur);if(reset&&VIEW[p]!=="scheme"){VIEW[p]="scheme";ch=true;}cur=p;try{localStorage.setItem(PKEY,cur);}catch(e){} mode="panel";markTabs();if(ch)build();}
+for(var k=0;k<tb.length;k++){(function(b){b.addEventListener("click",function(){
+  var p=b.getAttribute("data-p");
+  if(p==="dev"||p==="conv"||p==="sep"){mode=p;markTabs();return;}
+  if(mode==="panel"&&p===cur){VIEW[cur]=(VIEW[cur]==="scheme")?"photo":"scheme";markTabs();build();return;}
+  setPanel(p,true);
+});})(tb[k]);}
+function goTo(p,i){
+  setPanel(p); sel=i; render();
+  setTimeout(function(){centerPhoto(i,true);rows[i].scrollIntoView({behavior:"smooth",block:"center"});},60);
+}
+// devices tree
+var DEVS=[
+ {t:"Ванная",p:"right",i:7,c:[
+  {t:"Септик (питание через тройники)",c:[{t:"Компрессор септика"},{t:"Дренажный насос септика"},{t:"Камера на столбе №1 (свой блок питания)"},{t:"Камера на столбе №2 (свой блок питания)"},{t:"Дренажный насос в дренажном колодце"}]},
+  {t:"Бойлер"},
+  {t:"Греющий кабель скважины"},
+  {t:"Камера в туалете"},
+  {t:"Очистка воды"},
+  {t:"Скважина"},
+  {t:"Розетки в ванной",c:[{t:"Конвектор 18 (ванная)"}]},
+  {t:"Свет в ванной"}
+ ]},
+ {t:"Вводное реле от столба",p:"right",i:0,c:[
+  {t:"Фаза L1",p:"right",i:0},
+  {t:"Фаза L2",p:"right",i:1},
+  {t:"Фаза L3",p:"right",i:2},
+  {t:"Стабилизатор (дальше от реле)",p:"right",i:0}
+ ]},
+ {t:"Комната маман (2й этаж)",c:[
+  {t:"Верхний свет",p:"left",i:0},
+  {t:"Розетка",p:"left",i:2}
+ ]},
+ {t:"Комната с проектором",c:[
+  {t:"Розетка",p:"left",i:1,c:[{t:"Второй роутер Xiaomi AX6000"},{t:"Конвектор 18 (проекторная)"}]}
+ ]},
+ {t:"Комната с барабанами (2й этаж)",c:[
+  {t:"Верхний свет",p:"left",i:6},
+  {t:"Розетка",p:"left",i:3}
+ ]},
+ {t:"Гостиная",c:[
+  {t:"Удлинитель у дивана",p:"left",i:4,c:[{t:"Умная розетка для Баллу Гостиная",c:[{t:"Конвектор Баллу инверт 25 (гостиная)"}]}]},
+  {t:"Удлинитель на кухню",p:"left",i:5,c:[{t:"Чайник"},{t:"Микроволновка"},{t:"Гриль"},{t:"Мультиварка"},{t:"Провод: чёрный 3×2,5 мм²"}]}
+ ]},
+ {t:"Лестница",c:[
+  {t:"Удлинитель у окна",p:"right",i:9,c:[{t:"Роутер Keenetic Runner 4G"},{t:"Роутер AX6000 (1-й, основной)"},{t:"Камера"}]}
+ ]},
+ {t:"Освещение",c:[
+  {t:"Свет 1-го этажа",p:"right",i:14},
+  {t:"Свет 2-го этажа",p:"right",i:14},
+  {t:"Уличное освещение",p:"right",i:14,c:[{t:"Лампы веранды (11 шт.)"},{t:"Прожекторы 2×100 Вт"},{t:"Прожектор 150 Вт"}]}
+ ]},
+ {t:"Холодильник",p:"right",i:5,w:1,c:[
+  {t:"Удлинитель холодильника",c:[{t:"Умная розетка для Баллу Коридор",c:[{t:"Конвектор Баллу инверт 25 (коридор)"}]},{t:"Сбер Хаб"}]}
+ ]},
+ {t:"Электроплита",p:"right",i:16}
+];
+var CONV=[
+ {t:"Баллу инверт 25",r:"Гостиная",chain:["Умная розетка «Розетка для Баллу Гостиная»","Удлинитель у дивана"],p:"left",i:4},
+ {t:"Баллу инверт 25",r:"Коридор",chain:["Умная розетка «Розетка для Баллу Коридор»","Удлинитель холодильника"],p:"right",i:5},
+ {t:"Конвектор 18",r:"Ванная",chain:["Розетка в ванной"],p:"right",i:7},
+ {t:"Конвектор 18",r:"Проекторная",chain:["Розетка в проекторной"],p:"left",i:1}
+];
+var convList=document.getElementById("convList");
+for(var q=0;q<CONV.length;q++){(function(c){
+  var d=document.createElement("div"); d.className="cv";
+  var h='<div class="ct"></div><div class="cr"></div><div class="cs">';
+  for(var j=0;j<c.chain.length;j++) h+='<div class="st ar"><i>↓</i></div><div class="st"><i>●</i><span></span></div>';
+  h+='</div><span class="go"></span>';
+  d.innerHTML=h;
+  d.querySelector(".ct").textContent=c.t+" — "+c.r;
+  d.querySelector(".cr").textContent="Конвектор · "+c.r;
+  var sp=d.querySelectorAll(".st span"); for(var j=0;j<sp.length;j++) sp[j].textContent=c.chain[j];
+  d.querySelector(".go").textContent="Автомат: "+(c.p==="left"?"Левый":"Правый")+" №"+(c.i+1)+" ›";
+  d.addEventListener("click",function(){goTo(c.p,c.i);});
+  convList.appendChild(d);
+})(CONV[q]);}
+
+// ---------- вкладка «Септик» ----------
+var SEPW=document.getElementById("sepWrap");
+var SW=[
+ {n:"1",t1:"КОМПР.",t2:" (левый)",norm1:"ВКЛ",norm2:" (вверх)",oth:"ВЫКЛ (вниз)",when:"Обслуживание, чистка фильтров, откачка ила дренажным насосом",box:[125,70,300,345]},
+ {n:"2",t1:"РУЧН.",t2:" (средний)",norm1:"ВЫКЛ",norm2:" (вниз)",oth:"ВКЛ (вверх)",when:"Проверка фаз, откачка ила штатным насосом, сбой автоматики",box:[320,55,475,335]},
+ {n:"3",t1:"ФАЗА / ОБРАТ.",t2:" (правый)",norm1:"ВЫКЛ",norm2:" (вниз)",oth:"ВКЛ (вверх)",when:"Только при включённом «РУЧН.»: ВКЛ — обратная фаза, ВЫКЛ — прямая",box:[478,55,640,335]},
+ {n:"!",t1:"Лампа «АВАРИЯ»",t2:" (справа)",norm1:"не горит",norm2:"",oth:"горит",when:"Горит и не гаснет — вызывайте сервис",box:[660,50,805,355]}
+];
+(function(){
+  var h='<div class="sp-t">Септик — станция «Юнилос-Астра»</div><div class="hint" style="margin-top:4px">Блок управления: положение переключателей при нормальной работе. Нажмите на переключатель на фото или в списке.</div>';
+  h+='<div class="sp-img"><img src="septic_block.jpg" alt="Блок управления станцией"><svg id="shsv" viewBox="0 0 1370 580" preserveAspectRatio="none"></svg></div>';
+  h+='<div class="tbw"><table class="tb"><colgroup><col style="width:9%"><col style="width:22%"><col style="width:18%"><col style="width:18%"><col style="width:33%"></colgroup><thead><tr><th>№</th><th>Тумблер</th><th>Норма (авто)</th><th>Другое положение</th><th>Когда нужно</th></tr></thead><tbody>';
+  for(var i=0;i<SW.length;i++){var w=SW[i];
+    h+='<tr class="sr" data-i="'+i+'"><td><span class="n2">'+w.n+'</span></td><td><b>'+w.t1+'</b>'+w.t2+'</td><td class="ok"><b>'+w.norm1+'</b>'+w.norm2+'</td><td>'+w.oth+'</td><td>'+w.when+'</td></tr>';}
+  h+='</tbody></table></div>';
+  h+='<div class="note warn"><b>Лампы в норме:</b> «РУЧН.» не горит; «ОБРАТ.» не горит или горит только в обратной фазе; «АВАРИЯ» не горит. Не оставляйте «РУЧН.» включённым надолго: в ручном режиме станция не следит за уровнем воды.</div>';
+  h+='<div class="note" style="background:var(--card);border:1px solid var(--line)">В нормальном режиме станция работает <b>автоматически</b>: фазы переключает поплавок в приёмной камере.</div>';
+  h+='<div class="sp-h">Питание септика</div><div class="pw"><button class="nd top" id="sepGo">Автомат: Правый №8 (Ванная) ›</button><div class="ar">↓</div><div class="nd">Тройники<span class="sb">&nbsp;— от автомата питание разводится на всё оборудование септика</span></div><div class="br">'
+   +'<div class="nd"><span>Камера на столбе №1<span class="sb">свой блок питания</span></span></div>'
+   +'<div class="nd"><span>Камера на столбе №2<span class="sb">свой блок питания</span></span></div>'
+   +'<div class="nd">Компрессор септика</div>'
+   +'<div class="nd">Дренажный насос септика</div>'
+   +'<div class="nd">Дренажный насос в дренажном колодце</div></div></div>';
+  h+='<div class="sp-h">Камеры станции</div><div class="cm"><b>А</b><span>приёмная камера</span><b>Б</b><span>аэротенк</span><b>В</b><span>отстойник</span><b>Г</b><span>иловый стабилизатор</span><b>•</b><span>жироуловитель</span></div>';
+  h+='<div class="sp-h">Где булькает при нормальной работе</div>';
+  h+='<div class="tbw"><table class="tb"><colgroup><col style="width:20%"><col style="width:25%"><col style="width:30%"><col style="width:25%"></colgroup><thead><tr><th>Фаза</th><th>Когда включается</th><th>Булькает</th><th>Не булькает</th></tr></thead><tbody>'
+   +'<tr><td><b>Прямая</b></td><td>Идут стоки, приёмная камера наполняется</td><td class="g">Аэротенк (Б), иловый стабилизатор (Г)</td><td>Приёмная камера (А), отстойник (В)</td></tr>'
+   +'<tr><td><b>Обратная</b></td><td>Стоков нет, уровень в приёмной камере падает</td><td class="g">Приёмная камера (А), отстойник (В), жиро&shy;уловитель</td><td>Аэротенк (Б): ил оседает, так и должно быть</td></tr></tbody></table></div>';
+  h+='<div class="note warn">Если никто не пользуется водой, станция сама чередует фазы (циркуляция), поэтому пузыри в аэротенке то появляются, то пропадают. Это не поломка.</div>';
+  h+='<div class="sp-h">Аварийная лампа в доме</div><div class="note bad"><b>Если в доме горит аварийная лампа, значит приёмная камера станции переполнена.</b> В норме лампа не горит. Отключите по возможности расход воды (стирка, душ, посудомойка) и вызовите сервис.</div>';
+  h+='<div class="sp-h">Когда звать сервис</div><ul class="sl"><li>Горит лампа «АВАРИЯ» на блоке или аварийная лампа в доме и не гаснет.</li><li>Фаза не переключается долго: аэротенк булькает всё время или не булькает совсем.</li><li>Воздух не идёт ни в одну камеру (проверьте питание и компрессор).</li><li>Откачку ила без опыта лучше доверить сервису; плановое обслуживание — раз в 3–6 месяцев.</li></ul>';
+  h+='<div class="sp-h">Сервис «СБМ-групп» (с наклейки на панели)</div><div>Москва:</div><button class="dial" data-n="+74957756014">+7 (495) 775-60-14</button><button class="dial" data-n="+79859225407">+7 (985) 922-54-07</button>';
+  h+='<div style="font-size:14px;margin-top:10px;color:#cfd4de">Санкт-Петербург: +7 (812) 320-49-64<br>Новосибирск: +7 (383) 230-18-77<br>Сочи: +7 (862) 226-16-16<br>www.sbm-group.ru</div>';
+  h+='<div class="srcn">Источники: технический паспорт «Юнилос-Астра» (astrapipe.ru) и руководство «Юнилос-Астра-5». Памятка составлена для серии «Юнилос-Астра»; для другой модели схема может отличаться.</div>';
+  SEPW.innerHTML=h;
+  var sv=document.getElementById("shsv"),cards=SEPW.querySelectorAll("tr.sr"),rects=[],cur2=-1;
+  function mark(){for(var i=0;i<cards.length;i++){cards[i].className="sr"+(i===cur2?" sel":"");rects[i].setAttribute("class","shs"+(i===cur2?" sel":""));}}
+  for(var i=0;i<SW.length;i++){(function(i){
+    var b=SW[i].box,r=document.createElementNS(NS,"rect");
+    r.setAttribute("x",b[0]);r.setAttribute("y",b[1]);r.setAttribute("width",b[2]-b[0]);r.setAttribute("height",b[3]-b[1]);r.setAttribute("rx",14);
+    r.addEventListener("click",function(){cur2=(cur2===i)?-1:i;mark();if(cur2>=0)cards[i].scrollIntoView({behavior:"smooth",block:"nearest"});});
+    sv.appendChild(r);rects.push(r);
+    cards[i].addEventListener("click",function(){cur2=(cur2===i)?-1:i;mark();});
+  })(i);}
+  mark();
+  var dl=SEPW.querySelectorAll("button.dial[data-n]");
+  for(var j=0;j<dl.length;j++){(function(b){b.addEventListener("click",function(){var n=b.getAttribute("data-n");try{if(window.AndroidApp&&window.AndroidApp.dial){window.AndroidApp.dial(n);return;}}catch(e){}location.href="tel:"+n;});})(dl[j]);}
+  document.getElementById("sepGo").addEventListener("click",function(){goTo("right",7);});
+})();
+var store=ShchitokStore.create(DEVS,PANELS);
+var devList=document.getElementById("devList");
+var modal=document.getElementById("modal"),mIn=document.getElementById("mInput"),mDesc=document.getElementById("mDesc"),mCat=document.getElementById("mCategory"),mNewCat=document.getElementById("mNewCategory"),mNewWrap=document.getElementById("newCatWrap"),mError=document.getElementById("mError");
+var editing=-1,editingDevice=null,editorMode="breaker",editorPanel="left";
+var noticeTimer;
+function notice(text){var n=document.getElementById("notice");n.textContent=text;n.className="on";clearTimeout(noticeTimer);noticeTimer=setTimeout(function(){n.className="";},2600);}
+function clean(v){return String(v===undefined||v===null?"":v).replace(/^\s+|\s+$/g,"");}
+function categoryByName(name,except){name=clean(name).toLowerCase();for(var i=0;i<store.state.categories.length;i++){var c=store.state.categories[i];if(c.id!==except&&c.name.toLowerCase()===name)return c;}return null;}
+function showError(el,text){el.textContent=text;el.className=text?"form-error on":"form-error";}
+function fillCategories(selected){
+  mCat.innerHTML="";
+  for(var i=0;i<store.state.categories.length;i++){var c=store.state.categories[i],o=document.createElement("option");o.value=c.id;o.textContent=c.name;mCat.appendChild(o);}
+  var n=document.createElement("option");n.value="__new__";n.textContent="＋ Создать новую категорию…";mCat.appendChild(n);
+  mCat.value=selected&&store.category(selected)?selected:"uncategorized";syncNewCategory();
+}
+function syncNewCategory(){mNewWrap.hidden=mCat.value!=="__new__";if(!mNewWrap.hidden)mNewCat.focus();}
+mCat.addEventListener("change",syncNewCategory);
+function openEditor(){
+  showError(mError,"");mNewCat.value="";modal.className="on";
+  setTimeout(function(){mIn.focus();mIn.select();},50);
+}
+function openEdit(i){
+  editorMode="breaker";editorPanel=cur;editing=i;editingDevice=null;
+  var linked=store.linkedDevice(cur,i);
+  document.getElementById("mTitle").textContent=(cur==="left"?"Левый щиток":"Правый щиток")+" · автомат №"+(i+1);
+  mIn.value=linked?linked.name:label(i);mDesc.value=linked?linked.description||"":"";fillCategories(linked?linked.categoryId:"uncategorized");
+  document.getElementById("mReset").style.display="block";openEditor();
+}
+function openDevice(id){
+  var d=store.device(id);if(!d)return;
+  editorMode="device";editing=-1;editingDevice=id;
+  document.getElementById("mTitle").textContent="Изменить устройство";
+  mIn.value=d.name;mDesc.value=d.description||"";fillCategories(d.categoryId);
+  document.getElementById("mReset").style.display="none";openEditor();
+}
+function closeEdit(){modal.className="";editing=-1;editingDevice=null;mIn.blur();mDesc.blur();mNewCat.blur();}
+function selectedCategory(){
+  if(mCat.value!=="__new__")return mCat.value;
+  var name=clean(mNewCat.value);if(!name){showError(mError,"Введите название новой категории");return null;}
+  if(categoryByName(name)){showError(mError,"Такая категория уже существует");return null;}
+  var c=store.addCategory(name);return c.id;
+}
+document.getElementById("mCancel").addEventListener("click",closeEdit);
+modal.addEventListener("click",function(e){if(e.target===modal)closeEdit();});
+document.getElementById("mSave").addEventListener("click",function(){
+  var name=clean(mIn.value);if(!name){showError(mError,"Введите название устройства");mIn.focus();return;}
+  var categoryId=selectedCategory();if(!categoryId)return;
+  if(editorMode==="breaker"&&editing>=0){
+    var linked=store.linkedDevice(editorPanel,editing),data={name:name,description:mDesc.value,categoryId:categoryId};
+    if(linked)store.updateDevice(linked.id,data);else store.addDevice(data,editorPanel,editing,true);
+    store.setBreaker(editorPanel,editing,name);loadEdits();render();
+  }else if(editingDevice){store.updateDevice(editingDevice,{name:name,description:mDesc.value,categoryId:categoryId});loadEdits();render();}
+  closeEdit();renderDevices();
+});
+document.getElementById("mReset").addEventListener("click",function(){
+  if(editorMode!=="breaker"||editing<0)return;
+  var value=PANELS[editorPanel].defs[editing]||"",linked=store.linkedDevice(editorPanel,editing);
+  if(linked){if(value)store.updateDevice(linked.id,{name:value,description:"",categoryId:linked.categoryId});else store.deleteDevice(linked.id);}
+  store.setBreaker(editorPanel,editing,value);loadEdits();closeEdit();render();renderDevices();
+});
+mIn.addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("mSave").click();});
+mNewCat.addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("mSave").click();});
+
+var catModal=document.getElementById("catModal"),catInput=document.getElementById("catInput"),catEditing=null;
+function openCategory(id){
+  catEditing=id;var c=id?store.category(id):null;
+  document.getElementById("catTitle").textContent=c?"Переименовать категорию":"Новая категория";
+  catInput.value=c?c.name:"";showError(document.getElementById("catError"),"");catModal.className="modal2 on";
+  setTimeout(function(){catInput.focus();if(c)catInput.select();},50);
+}
+function closeCategory(){catModal.className="modal2";catEditing=null;catInput.blur();}
+document.getElementById("addCat").addEventListener("click",function(){openCategory(null);});
+document.getElementById("catCancel").addEventListener("click",closeCategory);
+catModal.addEventListener("click",function(e){if(e.target===catModal)closeCategory();});
+document.getElementById("catSave").addEventListener("click",function(){
+  var name=clean(catInput.value),err=document.getElementById("catError");
+  if(!name){showError(err,"Введите название категории");return;}
+  if(categoryByName(name,catEditing)){showError(err,"Такая категория уже существует");return;}
+  if(catEditing)store.renameCategory(catEditing,name);else store.addCategory(name);
+  closeCategory();renderDevices();
+});
+catInput.addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("catSave").click();});
+
+var confirmModal=document.getElementById("confirmModal"),confirmAction=null;
+function askConfirm(title,text,action){document.getElementById("confirmTitle").textContent=title;document.getElementById("confirmText").textContent=text;confirmAction=action;confirmModal.className="modal2 on";setTimeout(function(){document.getElementById("confirmCancel").focus();},50);}
+function closeConfirm(){confirmModal.className="modal2";confirmAction=null;}
+document.getElementById("confirmCancel").addEventListener("click",closeConfirm);
+confirmModal.addEventListener("click",function(e){if(e.target===confirmModal)closeConfirm();});
+document.getElementById("confirmYes").addEventListener("click",function(){var action=confirmAction;closeConfirm();if(action)action();});
+document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(confirmAction)closeConfirm();else if(catModal.className.indexOf("on")>=0)closeCategory();else if(modal.className==="on")closeEdit();});
+
+function actionButton(text,label,handler,danger){var b=document.createElement("button");b.className="dact"+(danger?" del":"");b.textContent=text;b.title=label;b.setAttribute("aria-label",label);b.addEventListener("click",function(e){e.stopPropagation();handler();});return b;}
+function confirmCategory(id){
+  var c=store.category(id);if(!c||c.id==="uncategorized")return;
+  var count=store.state.devices.filter(function(d){return d.categoryId===id;}).length;
+  askConfirm("Удалить категорию?", "Категория «"+c.name+"» будет удалена."+(count?"\n\n"+count+" устройств(а) не пропадут: они переместятся в «Без категории».":""),function(){store.deleteCategory(id);renderDevices();});
+}
+function confirmDevice(id){
+  var d=store.device(id);if(!d)return;var nested=store.subtreeCount(id);
+  askConfirm("Удалить устройство?", "«"+d.name+"» будет удалено."+(nested?"\n\nТакже будут удалены вложенные записи: "+nested+".":"")+"\n\nЕсли устройство связано с автоматом, его пользовательская подпись будет очищена.",function(){store.deleteDevice(id);loadEdits();render();renderDevices();});
+}
+function renderDevice(parent,d,lvl){
+  var row=document.createElement("div");row.className="dn";row.style.marginLeft=(Math.min(lvl,3)*14)+"px";
+  var children=store.children(d.categoryId,d.id),kids=null;
+  if(children.length){var chev=document.createElement("button");chev.className="chev";chev.textContent="▾";chev.setAttribute("aria-label","Свернуть или развернуть");row.appendChild(chev);}
+  else{var dash=document.createElement("span");dash.className="lb";dash.textContent="–";row.appendChild(dash);}
+  var text=document.createElement("span");text.className="dtext";var name=document.createElement("span");name.className="dt";name.textContent=d.name;text.appendChild(name);
+  if(d.description){var desc=document.createElement("span");desc.className="ddesc";desc.textContent=d.description;text.appendChild(desc);}row.appendChild(text);
+  var link=store.linkFor(d);
+  if(link&&(d.panel!==undefined&&d.panel!==null||lvl===0)){var chip=document.createElement("span");chip.className="chip";chip.textContent=(link.p==="left"?"Левый":"Правый")+" №"+(link.i+1);row.appendChild(chip);}
+  if(link&&link.w){var wi=document.createElement("span");wi.className="wi";wi.innerHTML=WARN_SVG;row.appendChild(wi);}
+  row.appendChild(actionButton("✎","Изменить "+d.name,function(){openDevice(d.id);}));
+  row.appendChild(actionButton("×","Удалить "+d.name,function(){confirmDevice(d.id);},true));
+  row.addEventListener("click",function(){if(link)goTo(link.p,link.i);else if(kids)kids.className=kids.className.indexOf("off")<0?"dk off":"dk";});
+  parent.appendChild(row);
+  if(children.length){kids=document.createElement("div");kids.className="dk";parent.appendChild(kids);
+    chev.addEventListener("click",function(e){e.stopPropagation();var off=kids.className.indexOf("off")<0;kids.className=off?"dk off":"dk";chev.textContent=off?"▸":"▾";});
+    for(var i=0;i<children.length;i++)renderDevice(kids,children[i],lvl+1);
+  }
+}
+function renderCategory(c){
+  var roots=store.children(c.id,null),all=store.state.devices.filter(function(d){return d.categoryId===c.id;});
+  var head=document.createElement("div");head.className="dcat";
+  var link=store.linkFor(c),main=document.createElement(link?"button":"div");main.className="dcat-main";
+  var title=document.createElement("b");title.textContent=c.name;main.appendChild(title);var count=document.createElement("small");count.textContent=all.length+" устройств(а)";main.appendChild(count);
+  if(link){var chip=document.createElement("span");chip.className="chip";chip.textContent=(link.p==="left"?"Левый":"Правый")+" №"+(link.i+1);main.appendChild(chip);main.addEventListener("click",function(){goTo(link.p,link.i);});}
+  head.appendChild(main);
+  if(c.id!=="uncategorized"){
+    var actions=document.createElement("div");actions.className="dactions";actions.appendChild(actionButton("✎","Переименовать категорию "+c.name,function(){openCategory(c.id);}));actions.appendChild(actionButton("×","Удалить категорию "+c.name,function(){confirmCategory(c.id);},true));head.appendChild(actions);
+  }
+  devList.appendChild(head);
+  if(!roots.length){var empty=document.createElement("div");empty.className="empty";empty.textContent="В этой категории пока нет устройств";devList.appendChild(empty);}
+  for(var j=0;j<roots.length;j++)renderDevice(devList,roots[j],0);
+}
+function renderDevices(){
+  devList.innerHTML="";
+  for(var i=0;i<store.state.categories.length;i++)renderCategory(store.state.categories[i]);
+}
+function exportChanges(){
+  var version="";try{if(window.AndroidApp&&window.AndroidApp.version)version=window.AndroidApp.version();}catch(e){}
+  var data=store.exportData(version),json=JSON.stringify(data,null,2),date=new Date().toISOString().slice(0,10),filename="shchitok2-changes-"+date+".json";
+  try{
+    if(window.AndroidApp&&window.AndroidApp.shareChanges){window.AndroidApp.shareChanges(json);notice("Выберите, кому отправить файл изменений");return;}
+    var blob=new Blob([json],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);notice("Файл изменений подготовлен: "+data.operations.length+" операций");
+  }catch(e){notice("Не удалось выгрузить изменения: "+e.message);}
+}
+document.getElementById("exportChanges").addEventListener("click",exportChanges);
+renderDevices();
+markTabs(); build();
+try{
+  if(window.AndroidApp){
+    document.getElementById("foot").style.display="block";
+    document.getElementById("ver").textContent="Версия "+window.AndroidApp.version();
+    document.getElementById("upd").addEventListener("click",function(){window.AndroidApp.checkUpdate();});
+    document.getElementById("shr").addEventListener("click",function(){window.AndroidApp.shareApk();});
+  }
+}catch(e){}
+})();
+</script>
+</body>
+</html>

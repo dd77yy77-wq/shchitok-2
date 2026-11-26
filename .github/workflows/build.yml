@@ -169,10 +169,13 @@ jobs:
           except subprocess.CalledProcessError as error:
               fail(f'aapt не смог прочитать APK: {error.output}')
           expected = f"package: name='com.dd.shchitok2' versionCode='{os.environ['CODE']}' versionName='{os.environ['NAME']}'"
-          if expected not in badging.splitlines()[0]:
-              fail('aapt подтвердил неправильный пакет или номер версии.')
-          if "application-label:'Щиток 86'" not in badging.splitlines():
-              fail('aapt подтвердил неправильное название приложения.')
+          badging_lines = badging.splitlines()
+          if not badging_lines or expected not in badging_lines[0]:
+              actual = badging_lines[0] if badging_lines else '<пустой вывод>'
+              fail(f'aapt подтвердил неправильный пакет или номер версии: {actual}')
+          if "application-label:'Щиток 86'" not in badging_lines:
+              labels = [line for line in badging_lines if 'label' in line or 'application:' in line]
+              fail(f'aapt подтвердил неправильное название приложения: {labels}')
           print('ZIP, подпись v2, отсутствие ключей, интерфейс, 20 PNG и название проверены.')
           print(badging)
           PY

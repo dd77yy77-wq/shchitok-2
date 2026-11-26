@@ -34,6 +34,10 @@ python tools/apply_changes.py shchitok2-changes.json
 
 Если `code` больше установленного, оно скачивает `Shchitok2.apk` из той же директории и предлагает установить обновление. Для нового выпуска необходимо увеличить `code`, обновить `name`/`notes` и заменить APK.
 
+## Облачная сборка APK
+
+GitHub Actions может собрать, проверить и опубликовать APK без включённого домашнего компьютера. Для однократной настройки нужны два секрета подписи в `dd77yy77-wq/shchitok-2`; запросы выпусков задаются в `release-request.json`. Подробности: [docs/CLOUD_BUILD.md](docs/CLOUD_BUILD.md).
+
 ## Сборка без Android SDK
 
 Нужны JDK и Python 3 с пакетами `Pillow` и `cryptography`.

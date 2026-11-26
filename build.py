@@ -79,7 +79,8 @@ for dp, _, fs in sorted(os.walk(os.path.join(HERE, 'assets'))):
 
 # 5. sign
 from cryptography.hazmat.primitives.serialization import pkcs12
-key, cert, _ = pkcs12.load_key_and_certificates(open(os.path.join(KEYDIR, 'shchitok2.p12'), 'rb').read(), b'android')
+key_password = os.environ.get('SIGNING_PASSWORD', 'android').encode('utf-8')
+key, cert, _ = pkcs12.load_key_and_certificates(open(os.path.join(KEYDIR, 'shchitok2.p12'), 'rb').read(), key_password)
 meta = A.v1_files([(n, d) for n, d, _ in entries], cert, key)
 # order: manifest first like apksigner does, then everything else, META-INF last
 entries = entries + [(n, d, 'deflate') for n, d in meta]

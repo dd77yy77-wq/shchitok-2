@@ -1,0 +1,182 @@
+name: Собрать и опубликовать APK
+
+on:
+  push:
+    branches: [main]
+    paths: [release-request.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shchitok2-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Получить исходники
+        uses: actions/checkout@v4
+
+      - name: Настроить Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Настроить Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Установить зависимости сборки
+        run: |
+          python3 -m pip install --disable-pip-version-check Pillow cryptography
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+          bash tools/setup_dx.sh
+
+      - name: Проверить запрос выпуска
+        id: release
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          request = json.loads(Path('release-request.json').read_text(encoding='utf-8'))
+          current = json.loads(Path('version.json').read_text(encoding='utf-8'))
+          if request.get('application') != 'com.dd.shchitok2':
+              raise SystemExit('Отказ: в запросе указан другой пакет приложения.')
+          code = request.get('code')
+          name = request.get('name')
+          notes = request.get('notes')
+          if type(code) is not int or code < 1:
+              raise SystemExit('code должен быть положительным целым числом.')
+          if not isinstance(name, str) or not name.strip() or name != name.strip() or '\n' in name or '\r' in name:
+              raise SystemExit('name должен быть непустой однострочной строкой без краевых пробелов.')
+          if not isinstance(notes, str) or not notes.strip():
+              raise SystemExit('notes должен быть непустой строкой.')
+          current_code = current.get('code')
+          if type(current_code) is not int:
+              raise SystemExit('Некорректный code в текущем version.json.')
+          if code < current_code:
+              raise SystemExit(f'Отказ: code {code} меньше опубликованного {current_code}.')
+          if code == current_code and name != current.get('name'):
+              raise SystemExit('При неизменном code нельзя менять name; для новой версии увеличьте code.')
+          version = {'code': code, 'name': name, 'notes': notes}
+          Path('version.json').write_text(json.dumps(version, ensure_ascii=False) + '\n', encoding='utf-8')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'code={code}\nname={name}\n')
+          print(f'Запрос проверен: {name} (code {code}); опубликовано ранее: code {current_code}.')
+          PY
+
+      - name: Проверить ключ подписи
+        env:
+          SHCHITOK2_KEY_BASE64: ${{ secrets.SHCHITOK2_KEY_BASE64 }}
+          SHCHITOK2_KEY_PASSWORD: ${{ secrets.SHCHITOK2_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import os
+          from pathlib import Path
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.primitives.serialization import pkcs12
+
+          encoded = os.environ.get('SHCHITOK2_KEY_BASE64', '')
+          password = os.environ.get('SHCHITOK2_KEY_PASSWORD', '')
+          if not encoded or not password:
+              raise SystemExit('Настройте секреты SHCHITOK2_KEY_BASE64 и SHCHITOK2_KEY_PASSWORD в репозитории shchitok-2.')
+          try:
+              blob = base64.b64decode(''.join(encoded.split()), validate=True)
+          except Exception:
+              raise SystemExit('SHCHITOK2_KEY_BASE64 не является корректной Base64-строкой.') from None
+          try:
+              key, cert, _ = pkcs12.load_key_and_certificates(blob, password.encode('utf-8'))
+          except Exception:
+              raise SystemExit('Не удалось открыть ключ: проверьте оба секрета подписи.') from None
+          if key is None or cert is None:
+              raise SystemExit('В PKCS12 отсутствует закрытый ключ или сертификат.')
+          actual = hashlib.sha256(cert.public_bytes(serialization.Encoding.DER)).hexdigest().upper()
+          expected = 'B90E1B89BFDCA58C5AE37E38670B3B32718FA6203F59590C47A27DD1213C0706'
+          if actual != expected:
+              raise SystemExit('Отказ: сертификат не совпадает с сертификатом установленного приложения.')
+          keydir = Path(os.environ['RUNNER_TEMP']) / 'keys'
+          keydir.mkdir(mode=0o700, parents=True, exist_ok=True)
+          keydir.chmod(0o700)
+          keyfile = keydir / 'shchitok2.p12'
+          keyfile.write_bytes(blob)
+          keyfile.chmod(0o600)
+          print('Ключ расшифрован во временную папку; отпечаток сертификата совпал.')
+          PY
+
+      - name: Собрать APK
+        env:
+          CODE: ${{ steps.release.outputs.code }}
+          NAME: ${{ steps.release.outputs.name }}
+          DXCP: /tmp/dalvik/dxout
+          KEYDIR: ${{ runner.temp }}/keys
+          SIGNING_PASSWORD: ${{ secrets.SHCHITOK2_KEY_PASSWORD }}
+        run: python3 build.py "$CODE" "$NAME" Shchitok2.apk
+
+      - name: Проверить содержимое и подпись APK
+        env:
+          CODE: ${{ steps.release.outputs.code }}
+          NAME: ${{ steps.release.outputs.name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          import zipfile
+
+          sys.path.insert(0, str(Path('tools').resolve()))
+          import apkbuild
+
+          apk = Path('Shchitok2.apk').read_bytes()
+          with zipfile.ZipFile('Shchitok2.apk') as archive:
+              damaged = archive.testzip()
+              if damaged is not None:
+                  raise SystemExit(f'Повреждённый ZIP-элемент: {damaged}')
+              names = archive.namelist()
+              forbidden = [name for name in names if name.lower().endswith(('.p12', '.jks'))]
+              if forbidden:
+                  raise SystemExit('Отказ: в APK обнаружен файл ключа подписи.')
+              if archive.read('assets/index.html') != Path('assets/index.html').read_bytes():
+                  raise SystemExit('Интерфейс в APK не совпадает с исходником.')
+          apkbuild.v2_verify(apk)
+          tool = Path(os.environ['ANDROID_HOME']) / 'build-tools' / '34.0.0' / 'aapt'
+          badging = subprocess.check_output([str(tool), 'dump', 'badging', 'Shchitok2.apk'], text=True)
+          expected = f"package: name='com.dd.shchitok2' versionCode='{os.environ['CODE']}' versionName='{os.environ['NAME']}'"
+          if expected not in badging.splitlines()[0]:
+              raise SystemExit('aapt подтвердил неправильный пакет или номер версии.')
+          print('ZIP, подпись v2, отсутствие ключей и assets/index.html проверены.')
+          print(badging)
+          PY
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose --print-certs --min-sdk-version 21 Shchitok2.apk
+
+      - name: Сохранить APK как артефакт проверки
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shchitok2-${{ steps.release.outputs.name }}
+          path: Shchitok2.apk
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Опубликовать проверенный APK
+        env:
+          CODE: ${{ steps.release.outputs.code }}
+          NAME: ${{ steps.release.outputs.name }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- Shchitok2.apk version.json
+          if git diff --cached --quiet; then
+            echo 'APK и version.json уже опубликованы; новый коммит не требуется.'
+          else
+            git commit -m "Щиток 2 $NAME (code $CODE): облачная сборка"
+            git push origin main
+          fi

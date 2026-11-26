@@ -136,32 +136,43 @@ jobs:
           sys.path.insert(0, str(Path('tools').resolve()))
           import apkbuild
 
+          def fail(message):
+              message = str(message).replace('\n', ' | ')
+              print(f'::error::{message}')
+              raise SystemExit(message)
+
           apk = Path('Shchitok2.apk').read_bytes()
           with zipfile.ZipFile('Shchitok2.apk') as archive:
               damaged = archive.testzip()
               if damaged is not None:
-                  raise SystemExit(f'Повреждённый ZIP-элемент: {damaged}')
+                  fail(f'Повреждённый ZIP-элемент: {damaged}')
               names = archive.namelist()
               forbidden = [name for name in names if name.lower().endswith(('.p12', '.jks'))]
               if forbidden:
-                  raise SystemExit('Отказ: в APK обнаружен файл ключа подписи.')
+                  fail('Отказ: в APK обнаружен файл ключа подписи.')
               if archive.read('assets/index.html') != Path('assets/index.html').read_bytes():
-                  raise SystemExit('Интерфейс в APK не совпадает с исходником.')
+                  fail('Интерфейс в APK не совпадает с исходником.')
               icon_files = sorted(Path('icons').rglob('*.png'))
               if len(icon_files) != 20:
-                  raise SystemExit(f'Ожидалось 20 PNG иконок, найдено: {len(icon_files)}.')
+                  fail(f'Ожидалось 20 PNG иконок, найдено: {len(icon_files)}.')
               for source in icon_files:
                   packed = 'res/' + source.relative_to('icons').as_posix()
                   if packed not in names or archive.read(packed) != source.read_bytes():
-                      raise SystemExit(f'Иконка в APK не совпадает с исходником: {packed}')
-          apkbuild.v2_verify(apk)
+                      fail(f'Иконка в APK не совпадает с исходником: {packed}')
+          try:
+              apkbuild.v2_verify(apk)
+          except Exception as error:
+              fail(f'Проверка v2: {type(error).__name__}: {error}')
           tool = Path(os.environ['ANDROID_HOME']) / 'build-tools' / '34.0.0' / 'aapt'
-          badging = subprocess.check_output([str(tool), 'dump', 'badging', 'Shchitok2.apk'], text=True)
+          try:
+              badging = subprocess.check_output([str(tool), 'dump', 'badging', 'Shchitok2.apk'], text=True, stderr=subprocess.STDOUT)
+          except subprocess.CalledProcessError as error:
+              fail(f'aapt не смог прочитать APK: {error.output}')
           expected = f"package: name='com.dd.shchitok2' versionCode='{os.environ['CODE']}' versionName='{os.environ['NAME']}'"
           if expected not in badging.splitlines()[0]:
-              raise SystemExit('aapt подтвердил неправильный пакет или номер версии.')
+              fail('aapt подтвердил неправильный пакет или номер версии.')
           if "application-label:'Щиток 86'" not in badging.splitlines():
-              raise SystemExit('aapt подтвердил неправильное название приложения.')
+              fail('aapt подтвердил неправильное название приложения.')
           print('ZIP, подпись v2, отсутствие ключей, интерфейс, 20 PNG и название проверены.')
           print(badging)
           PY

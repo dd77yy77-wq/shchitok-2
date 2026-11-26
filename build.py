@@ -43,8 +43,8 @@ for dpi, q in dens:
         target = 'res/' + source
         files[target] = icon_bytes(source)
         configs.append((density_cfg, target))
-    for name, configs in (('ic_launcher', mip_cfgs), ('ic_launcher_round', round_cfgs)):
-        source = 'mipmap-%s-v4/%s.png' % (q, name)
+    for icon_name, configs in (('ic_launcher', mip_cfgs), ('ic_launcher_round', round_cfgs)):
+        source = 'mipmap-%s-v4/%s.png' % (q, icon_name)
         target = 'res/' + source
         files[target] = icon_bytes(source)
         configs.append((density_cfg, target))
@@ -52,8 +52,8 @@ adaptive = A.build_axml(N('adaptive-icon', [], [
     N('background', [(True, 'drawable', T_REF, 0x7f010000)]),
     N('foreground', [(True, 'drawable', T_REF, 0x7f010001)]),
 ]), True)
-for name, configs in (('ic_launcher', mip_cfgs), ('ic_launcher_round', round_cfgs)):
-    target = 'res/mipmap-anydpi-v26/%s.xml' % name
+for icon_name, configs in (('ic_launcher', mip_cfgs), ('ic_launcher_round', round_cfgs)):
+    target = 'res/mipmap-anydpi-v26/%s.xml' % icon_name
     files[target] = adaptive
     configs.append((cfg(0xfffe, 26), target))
 arsc = A.build_arsc(PKG, [

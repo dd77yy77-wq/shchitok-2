@@ -147,13 +147,22 @@ jobs:
                   raise SystemExit('Отказ: в APK обнаружен файл ключа подписи.')
               if archive.read('assets/index.html') != Path('assets/index.html').read_bytes():
                   raise SystemExit('Интерфейс в APK не совпадает с исходником.')
+              icon_files = sorted(Path('icons').rglob('*.png'))
+              if len(icon_files) != 20:
+                  raise SystemExit(f'Ожидалось 20 PNG иконок, найдено: {len(icon_files)}.')
+              for source in icon_files:
+                  packed = 'res/' + source.relative_to('icons').as_posix()
+                  if packed not in names or archive.read(packed) != source.read_bytes():
+                      raise SystemExit(f'Иконка в APK не совпадает с исходником: {packed}')
           apkbuild.v2_verify(apk)
           tool = Path(os.environ['ANDROID_HOME']) / 'build-tools' / '34.0.0' / 'aapt'
           badging = subprocess.check_output([str(tool), 'dump', 'badging', 'Shchitok2.apk'], text=True)
           expected = f"package: name='com.dd.shchitok2' versionCode='{os.environ['CODE']}' versionName='{os.environ['NAME']}'"
           if expected not in badging.splitlines()[0]:
               raise SystemExit('aapt подтвердил неправильный пакет или номер версии.')
-          print('ZIP, подпись v2, отсутствие ключей и assets/index.html проверены.')
+          if "application-label:'Щиток 86'" not in badging.splitlines():
+              raise SystemExit('aapt подтвердил неправильное название приложения.')
+          print('ZIP, подпись v2, отсутствие ключей, интерфейс, 20 PNG и название проверены.')
           print(badging)
           PY
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose --print-certs --min-sdk-version 21 Shchitok2.apk
@@ -177,6 +186,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'APK и version.json уже опубликованы; новый коммит не требуется.'
           else
-            git commit -m "Щиток 2 $NAME (code $CODE): облачная сборка"
+            git commit -m "Щиток 86 $NAME (code $CODE): облачная сборка"
             git push origin main
           fi

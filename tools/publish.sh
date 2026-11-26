@@ -17,5 +17,5 @@ with open(path, 'w', encoding='utf-8') as f:
     f.write('\n')
 PY
 git -C "$ROOT" add -A
-git -C "$ROOT" commit -m "Щиток 2 $2: $3"
+git -C "$ROOT" commit -m "Щиток 86 $2: $3"
 git -C "$ROOT" push origin main

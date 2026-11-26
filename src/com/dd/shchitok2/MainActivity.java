@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
                         out.close();
                         in.close();
                         final Uri u = Uri.parse("content://" + ApkProvider.AUTH + "/Shchitok2.apk");
-                        shareFile(dst, u, "application/vnd.android.package-archive", "Поделиться приложением Щиток 2");
+                        shareFile(dst, u, "application/vnd.android.package-archive", "Поделиться приложением Щиток 86");
                     } catch (final Throwable e) {
                         a.runOnUiThread(new Runnable() {
                             public void run() {
@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
                         out.write(json.getBytes("UTF-8"));
                         out.close();
                         final Uri u = Uri.parse("content://" + ApkProvider.AUTH + "/shchitok2-changes.json");
-                        shareFile(dst, u, "application/json", "Отправить изменения Щитка 2");
+                        shareFile(dst, u, "application/json", "Отправить изменения Щитка 86");
                     } catch (final Throwable e) {
                         a.runOnUiThread(new Runnable() {
                             public void run() {

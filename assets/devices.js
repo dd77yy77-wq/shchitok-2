@@ -1,4 +1,4 @@
-/* Общее состояние устройств, категорий, подписей и журнала изменений Щитка 2. */
+/* Общее состояние устройств, категорий, подписей и журнала изменений Щитка 86. */
 (function(global){
 "use strict";
 var STORE_KEY="shchitok2.state.v1";
@@ -153,7 +153,7 @@ function create(seedTree,panels){
     },
     setBreaker:function(panel,breaker,value){commit("breaker_update",{panel:panel,breaker:breaker,value:trim(value)});},
     exportData:function(appVersion){
-      return {format:"shchitok2-changes",formatVersion:1,application:{id:"com.dd.shchitok2",name:"Щиток 2",version:appVersion||""},exportedAt:new Date().toISOString(),operations:clone(state.localOps),snapshot:clone({categories:state.categories,devices:state.devices,links:state.links,breakers:state.breakers,breakerTimes:state.breakerTimes})};
+      return {format:"shchitok2-changes",formatVersion:1,application:{id:"com.dd.shchitok2",name:"Щиток 86",version:appVersion||""},exportedAt:new Date().toISOString(),operations:clone(state.localOps),snapshot:clone({categories:state.categories,devices:state.devices,links:state.links,breakers:state.breakers,breakerTimes:state.breakerTimes})};
     }
   };
 }

@@ -3,7 +3,7 @@ name: Собрать и опубликовать APK
 on:
   push:
     branches: [main]
-    paths: [release-request.json, .github/workflows/build.yml]
+    paths: [release-request.json, build.py, .github/workflows/build.yml]
   workflow_dispatch:
 
 permissions:

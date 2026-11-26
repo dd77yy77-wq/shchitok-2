@@ -155,25 +155,32 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
 }
 /* Щиток 2: управление категориями, устройствами и экспортом */
 [hidden]{display:none!important}
-.dev-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.dev-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 .dev-tools button,.dact,.dcat button{min-height:44px;cursor:pointer}
 .dev-tools button{flex:1 1 150px;background:var(--card);border:1px solid var(--line);color:var(--tx);font-size:14px;font-weight:600;padding:10px 12px;border-radius:12px}
 .dev-tools button:first-child{background:var(--acc);border-color:var(--acc);color:#1a1200}
 .dev-tools button:hover{filter:brightness(1.08)}
-.dcat{display:flex;align-items:center;gap:6px;margin:16px 0 6px;padding:6px 0;border-bottom:1px solid var(--line)}
-.dcat:first-child{margin-top:4px}
-.dcat-main{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:none;border:0;color:var(--tx);text-align:left;padding:6px 0;cursor:pointer}
-.dcat-main b{font-size:17px;overflow-wrap:anywhere}
-.dcat-main small{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+#devWrap{overflow-x:hidden}
+#devList{min-width:0}
+.dcat{display:flex;align-items:center;gap:4px;max-width:100%;margin:10px 0 4px;padding:4px 0;border-bottom:1px solid var(--line)}
+.dcat:first-child{margin-top:2px}
+.dcat-main{flex:1;min-width:0;min-height:44px;display:flex;align-items:center;gap:6px;background:none;border:0;color:var(--tx);text-align:left;padding:2px 0;cursor:pointer}
+.dcat-text{flex:1;min-width:0}
+.dcat-main b{display:block;font-size:16px;line-height:1.2;overflow-wrap:anywhere}
+.dcat-main small{display:block;color:var(--mut);font-size:11px;line-height:1.2;margin-top:2px}
 .dactions{display:flex;gap:2px;flex:none}
-.dact{background:none;border:0;color:var(--mut);border-radius:9px;min-width:40px;padding:8px;font-size:17px}
+.dact{background:none;border:0;color:var(--mut);border-radius:9px;min-width:40px;padding:6px;font-size:17px}
 .dact:hover,.dact:focus-visible{background:var(--card2);color:var(--tx)}
-.dact.del{color:#ff8f86}
+.dn{max-width:100%;gap:6px;min-height:52px;padding:4px 6px;margin-bottom:4px;font-size:14px;line-height:1.25}
+.dn .lb{min-width:12px;width:12px;text-align:center}
+.dn .chev{width:28px;min-height:40px;padding:0;margin:0}
 .dn .dtext{flex:1;min-width:0;overflow-wrap:anywhere}
-.dn .ddesc{display:block;color:var(--mut);font-size:12px;font-weight:400;margin-top:3px;white-space:pre-wrap}
-.dn .chip{flex:none;font-size:12px;font-weight:700;color:#1a1200;background:var(--acc);border-radius:999px;padding:4px 9px}
+.dn .dt{overflow-wrap:anywhere}
+.dn .ddesc{display:block;color:var(--mut);font-size:12px;font-weight:400;line-height:1.25;margin-top:2px;white-space:pre-wrap}
+.dn .chip,.dcat .chip{flex:none;font-size:11px;font-weight:700;color:#1a1200;background:var(--acc);border-radius:999px;padding:3px 7px;white-space:nowrap}
+.dn .wi svg{width:22px;height:22px}
 .dk.off{display:none}
-.empty{padding:18px 10px;color:var(--mut);text-align:center;border:1px dashed var(--line);border-radius:12px}
+.empty{padding:12px 10px;color:var(--mut);text-align:center;border:1px dashed var(--line);border-radius:12px}
 .sheet{max-height:90vh;overflow-y:auto}
 .sheet textarea,.sheet select{width:100%;font-size:16px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--tx);outline:none}
 .sheet textarea{min-height:76px;resize:vertical}
@@ -186,6 +193,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
 .modal2.on{display:flex}
 .confirm-text{color:var(--mut);font-size:14px;line-height:1.45;margin:0 0 8px;white-space:pre-wrap}
 .btns .danger{background:#8f2d26;border-color:#a43830;color:#fff}
+.editor-delete{display:block;width:100%;min-height:44px;margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1px solid #a43830;background:#8f2d26;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
 #notice{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:calc(100% - 32px);background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:12;text-align:center}
 #notice.on{opacity:1}
 @media (prefers-reduced-motion:reduce){#notice,#dim,.row{transition:none}}
@@ -207,7 +215,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
     <div class="foot" id="foot"><span id="ver"></span><div class="fbtns"><button id="upd">Проверить обновления</button><button id="shr">Поделиться АПК</button></div></div>
   </div>
   <div id="devWrap">
-    <p class="hint">Нажмите на устройство — откроется щиток и подсветится автомат. Карандаш — изменить, × — удалить.</p>
+    <p class="hint">Нажмите на устройство — откроется щиток и подсветится автомат. Карандаш — изменить или удалить.</p>
     <div class="dev-tools"><button id="addCat">+ Новая категория</button><button id="exportChanges">Выгрузить изменения</button></div>
     <div id="devList"></div>
   </div>
@@ -222,6 +230,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
   <label class="formfield" id="newCatWrap" hidden><span>Название новой категории</span><input id="mNewCategory" type="text" maxlength="80" placeholder="Например: кухня" autocomplete="off"></label>
   <p class="form-error" id="mError" role="alert"></p>
   <div class="btns"><button id="mCancel">Отмена</button><button class="ok" id="mSave">Сохранить</button></div>
+  <button class="editor-delete" id="mDelete" hidden>Удалить устройство</button>
   <button class="reset" id="mReset">Сбросить подпись к исходной</button>
 </div></div>
 <div id="catModal" class="modal2" role="dialog" aria-modal="true" aria-labelledby="catTitle"><div class="sheet">
@@ -229,6 +238,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
   <label class="formfield"><span>Название категории</span><input id="catInput" type="text" maxlength="80" placeholder="Например: гараж" autocomplete="off"></label>
   <p class="form-error" id="catError" role="alert"></p>
   <div class="btns"><button id="catCancel">Отмена</button><button class="ok" id="catSave">Сохранить</button></div>
+  <button class="editor-delete" id="catDelete" hidden>Удалить категорию</button>
 </div></div>
 <div id="confirmModal" class="modal2" role="dialog" aria-modal="true" aria-labelledby="confirmTitle"><div class="sheet">
   <h2 id="confirmTitle">Подтвердите удаление</h2>
@@ -637,16 +647,16 @@ function openEdit(i){
   var linked=store.linkedDevice(cur,i);
   document.getElementById("mTitle").textContent=(cur==="left"?"Левый щиток":"Правый щиток")+" · автомат №"+(i+1);
   mIn.value=linked?linked.name:label(i);mDesc.value=linked?linked.description||"":"";fillCategories(linked?linked.categoryId:"uncategorized");
-  document.getElementById("mReset").style.display="block";openEditor();
+  document.getElementById("mDelete").hidden=true;document.getElementById("mReset").style.display="block";openEditor();
 }
 function openDevice(id){
   var d=store.device(id);if(!d)return;
   editorMode="device";editing=-1;editingDevice=id;
   document.getElementById("mTitle").textContent="Изменить устройство";
   mIn.value=d.name;mDesc.value=d.description||"";fillCategories(d.categoryId);
-  document.getElementById("mReset").style.display="none";openEditor();
+  document.getElementById("mDelete").hidden=false;document.getElementById("mReset").style.display="none";openEditor();
 }
-function closeEdit(){modal.className="";editing=-1;editingDevice=null;mIn.blur();mDesc.blur();mNewCat.blur();}
+function closeEdit(){modal.className="";editing=-1;editingDevice=null;document.getElementById("mDelete").hidden=true;mIn.blur();mDesc.blur();mNewCat.blur();}
 function selectedCategory(){
   if(mCat.value!=="__new__")return mCat.value;
   var name=clean(mNewCat.value);if(!name){showError(mError,"Введите название новой категории");return null;}
@@ -677,11 +687,12 @@ mNewCat.addEventListener("keydown",function(e){if(e.key==="Enter")document.getEl
 var catModal=document.getElementById("catModal"),catInput=document.getElementById("catInput"),catEditing=null;
 function openCategory(id){
   catEditing=id;var c=id?store.category(id):null;
-  document.getElementById("catTitle").textContent=c?"Переименовать категорию":"Новая категория";
+  document.getElementById("catTitle").textContent=c?"Изменить категорию":"Новая категория";
+  document.getElementById("catDelete").hidden=!c||c.id==="uncategorized";
   catInput.value=c?c.name:"";showError(document.getElementById("catError"),"");catModal.className="modal2 on";
   setTimeout(function(){catInput.focus();if(c)catInput.select();},50);
 }
-function closeCategory(){catModal.className="modal2";catEditing=null;catInput.blur();}
+function closeCategory(){catModal.className="modal2";catEditing=null;document.getElementById("catDelete").hidden=true;catInput.blur();}
 document.getElementById("addCat").addEventListener("click",function(){openCategory(null);});
 document.getElementById("catCancel").addEventListener("click",closeCategory);
 catModal.addEventListener("click",function(e){if(e.target===catModal)closeCategory();});
@@ -702,16 +713,18 @@ confirmModal.addEventListener("click",function(e){if(e.target===confirmModal)clo
 document.getElementById("confirmYes").addEventListener("click",function(){var action=confirmAction;closeConfirm();if(action)action();});
 document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;if(confirmAction)closeConfirm();else if(catModal.className.indexOf("on")>=0)closeCategory();else if(modal.className==="on")closeEdit();});
 
-function actionButton(text,label,handler,danger){var b=document.createElement("button");b.className="dact"+(danger?" del":"");b.textContent=text;b.title=label;b.setAttribute("aria-label",label);b.addEventListener("click",function(e){e.stopPropagation();handler();});return b;}
+function actionButton(text,label,handler){var b=document.createElement("button");b.className="dact";b.textContent=text;b.title=label;b.setAttribute("aria-label",label);b.addEventListener("click",function(e){e.stopPropagation();handler();});return b;}
 function confirmCategory(id){
   var c=store.category(id);if(!c||c.id==="uncategorized")return;
   var count=store.state.devices.filter(function(d){return d.categoryId===id;}).length;
-  askConfirm("Удалить категорию?", "Категория «"+c.name+"» будет удалена."+(count?"\n\n"+count+" устройств(а) не пропадут: они переместятся в «Без категории».":""),function(){store.deleteCategory(id);renderDevices();});
+  askConfirm("Удалить категорию?", "Категория «"+c.name+"» будет удалена."+(count?"\n\n"+count+" устройств(а) не пропадут: они переместятся в «Без категории».":""),function(){if(catEditing===id)closeCategory();store.deleteCategory(id);renderDevices();});
 }
 function confirmDevice(id){
   var d=store.device(id);if(!d)return;var nested=store.subtreeCount(id);
-  askConfirm("Удалить устройство?", "«"+d.name+"» будет удалено."+(nested?"\n\nТакже будут удалены вложенные записи: "+nested+".":"")+"\n\nЕсли устройство связано с автоматом, его пользовательская подпись будет очищена.",function(){store.deleteDevice(id);loadEdits();render();renderDevices();});
+  askConfirm("Удалить устройство?", "«"+d.name+"» будет удалено."+(nested?"\n\nТакже будут удалены вложенные записи: "+nested+".":"")+"\n\nЕсли устройство связано с автоматом, его пользовательская подпись будет очищена.",function(){if(editingDevice===id)closeEdit();store.deleteDevice(id);loadEdits();render();renderDevices();});
 }
+document.getElementById("mDelete").addEventListener("click",function(){if(editingDevice)confirmDevice(editingDevice);});
+document.getElementById("catDelete").addEventListener("click",function(){if(catEditing)confirmCategory(catEditing);});
 function renderDevice(parent,d,lvl){
   var row=document.createElement("div");row.className="dn";row.style.marginLeft=(Math.min(lvl,3)*14)+"px";
   var children=store.children(d.categoryId,d.id),kids=null;
@@ -723,7 +736,6 @@ function renderDevice(parent,d,lvl){
   if(link&&(d.panel!==undefined&&d.panel!==null||lvl===0)){var chip=document.createElement("span");chip.className="chip";chip.textContent=(link.p==="left"?"Левый":"Правый")+" №"+(link.i+1);row.appendChild(chip);}
   if(link&&link.w){var wi=document.createElement("span");wi.className="wi";wi.innerHTML=WARN_SVG;row.appendChild(wi);}
   row.appendChild(actionButton("✎","Изменить "+d.name,function(){openDevice(d.id);}));
-  row.appendChild(actionButton("×","Удалить "+d.name,function(){confirmDevice(d.id);},true));
   row.addEventListener("click",function(){if(link)goTo(link.p,link.i);else if(kids)kids.className=kids.className.indexOf("off")<0?"dk off":"dk";});
   parent.appendChild(row);
   if(children.length){kids=document.createElement("div");kids.className="dk";parent.appendChild(kids);
@@ -735,11 +747,12 @@ function renderCategory(c){
   var roots=store.children(c.id,null),all=store.state.devices.filter(function(d){return d.categoryId===c.id;});
   var head=document.createElement("div");head.className="dcat";
   var link=store.linkFor(c),main=document.createElement(link?"button":"div");main.className="dcat-main";
-  var title=document.createElement("b");title.textContent=c.name;main.appendChild(title);var count=document.createElement("small");count.textContent=all.length+" устройств(а)";main.appendChild(count);
+  var text=document.createElement("span");text.className="dcat-text";main.appendChild(text);
+  var title=document.createElement("b");title.textContent=c.name;text.appendChild(title);var count=document.createElement("small");count.textContent=all.length+" устройств(а)";text.appendChild(count);
   if(link){var chip=document.createElement("span");chip.className="chip";chip.textContent=(link.p==="left"?"Левый":"Правый")+" №"+(link.i+1);main.appendChild(chip);main.addEventListener("click",function(){goTo(link.p,link.i);});}
   head.appendChild(main);
   if(c.id!=="uncategorized"){
-    var actions=document.createElement("div");actions.className="dactions";actions.appendChild(actionButton("✎","Переименовать категорию "+c.name,function(){openCategory(c.id);}));actions.appendChild(actionButton("×","Удалить категорию "+c.name,function(){confirmCategory(c.id);},true));head.appendChild(actions);
+    var actions=document.createElement("div");actions.className="dactions";actions.appendChild(actionButton("✎","Изменить категорию "+c.name,function(){openCategory(c.id);}));head.appendChild(actions);
   }
   devList.appendChild(head);
   if(!roots.length){var empty=document.createElement("div");empty.className="empty";empty.textContent="В этой категории пока нет устройств";devList.appendChild(empty);}

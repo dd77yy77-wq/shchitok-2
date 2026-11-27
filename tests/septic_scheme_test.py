@@ -31,10 +31,10 @@ with sync_playwright() as p:
           '| sch:', pg.locator('#shsv g.sch').count())
     pg.screenshot(path=str(OUT / 'sep_scheme.png'))
 
-    # 3. Клик по зоне «КОМПР.» на схеме — строка таблицы подсвечивается
+    # 3. Клик по зоне «КОМПР.» на схеме (SCHEME_BOXES[0] = [62,62,237,472]) — строка таблицы подсвечивается
     box = pg.locator('#shsv').bounding_box()
-    pg.mouse.click(box['x'] + (125 + 300) / 2 / 1370 * box['width'],
-                   box['y'] + (70 + 345) / 2 / 580 * box['height'])
+    pg.mouse.click(box['x'] + (62 + 237) / 2 / 1370 * box['width'],
+                   box['y'] + (62 + 472) / 2 / 580 * box['height'])
     pg.wait_for_timeout(300)
     print('click scheme rect 1 -> sel rows:', pg.eval_on_selector_all('#sepWrap tr.sr.sel .n2', 'e=>e.map(x=>x.textContent)'))
     pg.screenshot(path=str(OUT / 'sep_scheme_sel.png'))

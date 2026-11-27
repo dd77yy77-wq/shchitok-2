@@ -210,7 +210,7 @@ header{display:flex;align-items:center;gap:10px;padding:10px 14px 6px}
     <svg id="ov" viewBox="0 0 2576 1840" preserveAspectRatio="none"></svg>
   </div></div></div>
   <div id="listWrap">
-    <p class="hint">Нажмите на устройство на фото или на строку в списке. Карандаш — изменить название. Повторное нажатие на вкладку щитка переключает фото и схему.</p>
+    <p class="hint">Нажмите на устройство на фото или на строку в списке. Карандаш — изменить название. Повторное нажатие на вкладку щитка или септика переключает фото и схему.</p>
     <div id="list"></div>
     <div class="foot" id="foot"><span id="ver"></span><div class="fbtns"><button id="upd">Проверить обновления</button><button id="shr">Поделиться АПК</button></div></div>
   </div>
@@ -386,7 +386,7 @@ var PANELS={
 var PKEY="shchitok.panel";
 var cur="left";
 try{var sp=localStorage.getItem(PKEY);if(sp&&PANELS[sp])cur=sp;}catch(e){}
-var P=PANELS[cur], edits={}, VIEW={left:"scheme",right:"scheme"};
+var P=PANELS[cur], edits={}, VIEW={left:"scheme",right:"scheme"}, SEPVIEW="photo", sepViewApply=function(){};
 function V(){return VIEW[cur]==="scheme"?P.scheme:{vb:P.vb,polys:P.polys};}
 function loadEdits(){edits=store?store.labels(cur):{};}
 function save(){store.persist();}
@@ -491,13 +491,14 @@ for(var k=0;k<zb.length;k++){(function(b){b.addEventListener("click",function(){
 });})(zb[k]);}
 var tb=document.querySelectorAll("#tabs button"), app=document.getElementById("app"), mode="panel";
 function markTabs(){var a=(mode==="panel")?cur:mode;for(var j=0;j<tb.length;j++){var bp=tb[j].getAttribute("data-p"),on=(bp===a);tb[j].className=on?"on":"";
-  var sm=(on&&(bp==="left"||bp==="right"))?(VIEW[bp]==="scheme"?"схема ⇄":"фото ⇄"):"";
+  var sm=(on&&(bp==="left"||bp==="right"))?(VIEW[bp]==="scheme"?"схема ⇄":"фото ⇄"):(on&&bp==="sep")?(SEPVIEW==="scheme"?"схема ⇄":"фото ⇄"):"";
   tb[j].innerHTML="<span></span><small></small>";tb[j].firstChild.textContent=tb[j].getAttribute("data-t");tb[j].lastChild.textContent=sm;}
   app.className=(mode==="panel")?"":mode;}
 function setPanel(p,reset){var ch=(p!==cur);if(reset&&VIEW[p]!=="scheme"){VIEW[p]="scheme";ch=true;}cur=p;try{localStorage.setItem(PKEY,cur);}catch(e){} mode="panel";markTabs();if(ch)build();}
 for(var k=0;k<tb.length;k++){(function(b){b.addEventListener("click",function(){
   var p=b.getAttribute("data-p");
-  if(p==="dev"||p==="conv"||p==="sep"){mode=p;markTabs();return;}
+  if(p==="dev"||p==="conv"){mode=p;markTabs();return;}
+  if(p==="sep"){if(mode==="sep"){SEPVIEW=(SEPVIEW==="photo")?"scheme":"photo";sepViewApply();}mode=p;markTabs();return;}
   if(mode==="panel"&&p===cur){VIEW[cur]=(VIEW[cur]==="scheme")?"photo":"scheme";markTabs();build();return;}
   setPanel(p,true);
 });})(tb[k]);}
@@ -574,6 +575,58 @@ for(var q=0;q<CONV.length;q++){(function(c){
 
 // ---------- вкладка «Септик» ----------
 var SEPW=document.getElementById("sepWrap");
+// схема блока управления в тех же координатах, что и фото (1370×580): зоны нажатий SW совпадают в обоих режимах
+function drawSeptic(g){
+  RC(g,0,0,1370,580,"#12151b");
+  // белая панель: равные отступы 36 до крайних элементов со всех сторон
+  RC(g,89,14,1249,426,"#eceef2","#aeb4bd",20,4);
+  function tumbler(cx,cy,r,on){
+    CI(g,cx,cy,r,"#22252b","#0e1013",5);
+    CI(g,cx,cy,Math.round(r*0.7),"#34383f","#17191d",3);
+    var ty=cy+(on?-1:1)*(r+6);
+    LN(g,cx,cy,cx,ty,"#4a4f58",Math.round(r*0.6));
+    CI(g,cx,ty,Math.round(r*0.3),"#565c66","#23262b",3);
+  }
+  function lamp(cx,t){
+    RC(g,cx-31,60,62,52,"#3fce93","#1d7a56",8,4);
+    RC(g,cx-23,68,46,18,"#7fe3b8","none",5);
+    TX(g,cx,142,t,24,"#23262b","middle",800);
+  }
+  // 1 — КОМПР. (норма ВКЛ, рычаг вверх)
+  TX(g,212,100,"КОМПР.",26,"#23262b","middle",800);
+  TX(g,212,130,"ВКЛ.",19,"#4b5260","middle",700);
+  tumbler(212,205,50,true);
+  TX(g,212,282,"ВЫКЛ.",19,"#4b5260","middle",700);
+  // 2 — РУЧН. (норма ВЫКЛ, рычаг вниз)
+  lamp(397,"РУЧН.");
+  TX(g,397,180,"ВКЛ.",19,"#4b5260","middle",700);
+  tumbler(397,232,44,false);
+  TX(g,397,318,"ВЫКЛ.",19,"#4b5260","middle",700);
+  // 3 — ОБРАТ. (норма ВЫКЛ, рычаг вниз)
+  lamp(559,"ОБРАТ.");
+  TX(g,559,180,"ВКЛ.",19,"#4b5260","middle",700);
+  tumbler(559,232,44,false);
+  TX(g,559,318,"ВЫКЛ.",19,"#4b5260","middle",700);
+  // подписи под рамками: СЕТЬ — под блоком 1, ФАЗА — общая для блоков 2 и 3
+  TX(g,212,392,"СЕТЬ",26,"#23262b","middle",800);
+  TX(g,480,392,"ФАЗА",26,"#23262b","middle",800);
+  // лампа «АВАРИЯ» — панель отцентрирована в зоне нажатия [660,50,805,355]
+  RC(g,666,58,133,289,"#26292f","#101216",12,4);
+  TX(g,732,100,"АВАРИЯ",22,"#e6e9ee","middle",800);
+  RC(g,694,150,77,90,"#d4323a","#7d1b20",10,4);
+  RC(g,707,162,51,42,"#ef6a63","none",8);
+  // наклейка производителя — по высоте как блоки слева с учётом подписей СЕТЬ/ФАЗА
+  RC(g,828,50,474,354,"#f6f7f9","#c9cdd4",12,3);
+  CI(g,892,120,38,"none","#3a3f47",5);CI(g,892,120,22,"none","#3a3f47",4);
+  TX(g,1108,90,"АВТОНОМНАЯ КАНАЛИЗАЦИЯ",24,"#3a3f47","middle",700);
+  TX(g,1108,152,"ЮНИЛОС",58,"#6a3fa0","middle",800);
+  TX(g,1108,190,"производитель «СБМ-ГРУПП»",22,"#3a3f47","middle",600);
+  LN(g,856,220,1276,220,"#d4d8de",3);
+  TX(g,864,256,"Москва: +7 (495) 775-60-14",22,"#23262b","start",600);
+  TX(g,864,292,"Сервис: +7 (985) 922-54-07",22,"#23262b","start",600);
+  TX(g,864,328,"Санкт-Петербург: +7 (812) 320-49-64",22,"#23262b","start",600);
+  TX(g,1066,374,"www.sbm-group.ru",26,"#6a3fa0","middle",700);
+}
 var SW=[
  {n:"1",t1:"КОМПР.",t2:" (левый)",norm1:"ВКЛ",norm2:" (вверх)",oth:"ВЫКЛ (вниз)",when:"Обслуживание, чистка фильтров, откачка ила дренажным насосом",box:[125,70,300,345]},
  {n:"2",t1:"РУЧН.",t2:" (средний)",norm1:"ВЫКЛ",norm2:" (вниз)",oth:"ВКЛ (вверх)",when:"Проверка фаз, откачка ила штатным насосом, сбой автоматики",box:[320,55,475,335]},
@@ -581,7 +634,7 @@ var SW=[
  {n:"!",t1:"Лампа «АВАРИЯ»",t2:" (справа)",norm1:"не горит",norm2:"",oth:"горит",when:"Горит и не гаснет — вызывайте сервис",box:[660,50,805,355]}
 ];
 (function(){
-  var h='<div class="sp-t">Септик — станция «Юнилос-Астра»</div><div class="hint" style="margin-top:4px">Блок управления: положение переключателей при нормальной работе. Нажмите на переключатель на фото или в списке.</div>';
+  var h='<div class="sp-t">Септик — станция «Юнилос-Астра»</div><div class="hint" id="sepHint" style="margin-top:4px">Блок управления: положение переключателей при нормальной работе. Нажмите на переключатель на фото или в списке.</div>';
   h+='<div class="sp-img"><img src="septic_block.jpg" alt="Блок управления станцией"><svg id="shsv" viewBox="0 0 1370 580" preserveAspectRatio="none"></svg></div>';
   h+='<div class="tbw"><table class="tb"><colgroup><col style="width:9%"><col style="width:22%"><col style="width:18%"><col style="width:18%"><col style="width:33%"></colgroup><thead><tr><th>№</th><th>Тумблер</th><th>Норма (авто)</th><th>Другое положение</th><th>Когда нужно</th></tr></thead><tbody>';
   for(var i=0;i<SW.length;i++){var w=SW[i];
@@ -617,6 +670,16 @@ var SW=[
     cards[i].addEventListener("click",function(){cur2=(cur2===i)?-1:i;mark();});
   })(i);}
   mark();
+  var spImg=SEPW.querySelector(".sp-img"),sepImg=spImg.querySelector("img"),sepHint=document.getElementById("sepHint"),schG=null;
+  sepViewApply=function(){
+    var sch=(SEPVIEW==="scheme");
+    sepImg.style.display=sch?"none":"";
+    spImg.style.aspectRatio=sch?"1370 / 580":"";
+    for(var i=0;i<rects.length;i++){var b=SW[i].box,t=sch?50:b[1],bt=sch?355:b[3];rects[i].setAttribute("y",t);rects[i].setAttribute("height",bt-t);}
+    if(sch&&!schG){schG=document.createElementNS(NS,"g");schG.setAttribute("class","sch");sv.insertBefore(schG,sv.firstChild);drawSeptic(schG);}
+    if(!sch&&schG){sv.removeChild(schG);schG=null;}
+    sepHint.textContent=sch?"Блок управления: схема с положением переключателей при нормальной работе. Нажмите на переключатель на схеме или в списке.":"Блок управления: положение переключателей при нормальной работе. Нажмите на переключатель на фото или в списке.";
+  };
   var dl=SEPW.querySelectorAll("button.dial[data-n]");
   for(var j=0;j<dl.length;j++){(function(b){b.addEventListener("click",function(){var n=b.getAttribute("data-n");try{if(window.AndroidApp&&window.AndroidApp.dial){window.AndroidApp.dial(n);return;}}catch(e){}location.href="tel:"+n;});})(dl[j]);}
   document.getElementById("sepGo").addEventListener("click",function(){goTo("right",7);});

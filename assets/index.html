@@ -644,9 +644,9 @@ function openEditor(){
 }
 function openEdit(i){
   editorMode="breaker";editorPanel=cur;editing=i;editingDevice=null;
-  var linked=store.linkedDevice(cur,i);
+  var linked=store.deviceForBreaker(cur,i);
   document.getElementById("mTitle").textContent=(cur==="left"?"Левый щиток":"Правый щиток")+" · автомат №"+(i+1);
-  mIn.value=linked?linked.name:label(i);mDesc.value=linked?linked.description||"":"";fillCategories(linked?linked.categoryId:"uncategorized");
+  mIn.value=linked?linked.name:label(i);mDesc.value=linked?linked.description||"":"";fillCategories(linked?linked.categoryId:store.categoryForBreaker(cur,i));
   document.getElementById("mDelete").hidden=true;document.getElementById("mReset").style.display="block";openEditor();
 }
 function openDevice(id){
@@ -669,7 +669,7 @@ document.getElementById("mSave").addEventListener("click",function(){
   var name=clean(mIn.value);if(!name){showError(mError,"Введите название устройства");mIn.focus();return;}
   var categoryId=selectedCategory();if(!categoryId)return;
   if(editorMode==="breaker"&&editing>=0){
-    var linked=store.linkedDevice(editorPanel,editing),data={name:name,description:mDesc.value,categoryId:categoryId};
+    var linked=store.deviceForBreaker(editorPanel,editing),data={name:name,description:mDesc.value,categoryId:categoryId};
     if(linked)store.updateDevice(linked.id,data);else store.addDevice(data,editorPanel,editing,true);
     store.setBreaker(editorPanel,editing,name);loadEdits();render();
   }else if(editingDevice){store.updateDevice(editingDevice,{name:name,description:mDesc.value,categoryId:categoryId});loadEdits();render();}
@@ -677,7 +677,7 @@ document.getElementById("mSave").addEventListener("click",function(){
 });
 document.getElementById("mReset").addEventListener("click",function(){
   if(editorMode!=="breaker"||editing<0)return;
-  var value=PANELS[editorPanel].defs[editing]||"",linked=store.linkedDevice(editorPanel,editing);
+  var value=PANELS[editorPanel].defs[editing]||"",linked=store.deviceForBreaker(editorPanel,editing);
   if(linked){if(value)store.updateDevice(linked.id,{name:value,description:"",categoryId:linked.categoryId});else store.deleteDevice(linked.id);}
   store.setBreaker(editorPanel,editing,value);loadEdits();closeEdit();render();renderDevices();
 });

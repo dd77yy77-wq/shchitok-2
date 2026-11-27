@@ -15,6 +15,24 @@ function create(seedTree,panels){
   function persist(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state));}catch(e){}}
   function category(id){for(var i=0;i<state.categories.length;i++)if(state.categories[i].id===id)return state.categories[i];return null;}
   function device(id){for(var i=0;i<state.devices.length;i++)if(state.devices[i].id===id)return state.devices[i];return null;}
+  function deviceForBreaker(panel,breaker){
+    var linked=device(state.links[key(panel,breaker)]);
+    if(linked)return linked;
+    for(var i=0;i<state.devices.length;i++){
+      var d=state.devices[i];
+      if(d.panel===panel&&d.breaker!==undefined&&d.breaker!==null&&+d.breaker===+breaker)return d;
+    }
+    return null;
+  }
+  function categoryForBreaker(panel,breaker){
+    var d=deviceForBreaker(panel,breaker);
+    if(d)return d.categoryId;
+    for(var i=0;i<state.categories.length;i++){
+      var c=state.categories[i];
+      if(c.panel===panel&&c.breaker!==undefined&&c.breaker!==null&&+c.breaker===+breaker)return c.id;
+    }
+    return UNCATEGORIZED;
+  }
   function normalCategory(id){return category(id)?id:UNCATEGORIZED;}
   function setBreakerRaw(panel,breaker,value,at){
     if(!state.breakers[panel])state.breakers[panel]={};
@@ -119,7 +137,7 @@ function create(seedTree,panels){
   load();migrateLegacy();applyRelease();
 
   return {
-    state:state,persist:persist,category:category,device:device,key:key,
+    state:state,persist:persist,category:category,device:device,deviceForBreaker:deviceForBreaker,categoryForBreaker:categoryForBreaker,key:key,
     labels:function(panel){if(!state.breakers[panel])state.breakers[panel]={};return state.breakers[panel];},
     linkedDevice:function(panel,breaker){return device(state.links[key(panel,breaker)]);},
     linkFor:function(d){
